@@ -1,0 +1,12 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs
+/Comp_4300_IGT/x64/Debug
+/Comp_4300_IGT/C++ Prog.9C976116/x64/Debug
+/Comp_4300_IGT/C++ Programing Testing.sln
+/Comp_4300_IGT/C++ Programing Testing.vcxproj
+/Comp_4300_IGT/C++ Programing Testing.vcxproj.filters
+/Comp_4300_IGT/C++ Programing Testing.vcxproj.user
+/Comp_4300_IGT/.vs
