@@ -3,7 +3,7 @@
 #include<vector>
 #include<optional>
 #include<memory>
-
+#include<cmath>
 
 const int Width = 1280;
 const int Height = 720;
@@ -17,6 +17,20 @@ int CollisionCheck(sf::Shape& shape) {
 	}
 	return 0; // No collision
 }
+int CollisionwithOtherShape(sf::Shape& shape, std::vector<std::shared_ptr<sf::Shape>>& shapes, std::vector <sf::Vector2f>& moveSpeeds) {
+	for (auto& otherShape : shapes) {
+		//Skip checking collision with itself
+		if (otherShape.get() == &shape) {
+			continue;
+		}
+
+		if (shape.getGlobalBounds().findIntersection(otherShape->getGlobalBounds())) {
+			return 1; // Collision with another shape
+		}
+	}
+	return 0; // No collision
+}
+
 
 void UpdatePosition(sf::Shape& shape, sf::Vector2f& moveSpeed) {
 	shape.setPosition({ shape.getPosition().x + moveSpeed.x, shape.getPosition().y + moveSpeed.y });
@@ -69,6 +83,10 @@ int main() {
 				moveSpeeds[&shape - &shapes[0]].y *= -1; // Reverse Y direction
 				shape->setFillColor(sf::Color(rand() % 256, rand() % 256, rand() % 256)); // Change to random color
 			}
+			else if (CollisionwithOtherShape(*shape , shapes,moveSpeeds)) {
+				shape->setFillColor(sf::Color(rand() % 256, rand() % 256, rand() % 256)); // Change to random color
+			}
+
 			window.draw(*shape);
 		}
 		

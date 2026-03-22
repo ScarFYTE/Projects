@@ -1,7 +1,7 @@
 #include <SFML/Graphics.hpp>
 #include <optional> // Required for the new event system
 
-int main() {
+int WindowTest() {
 
     const int Width = 1280;
     const int Height = 720;
