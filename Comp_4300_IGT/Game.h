@@ -4,15 +4,15 @@
 
 #include<SFML/Graphics.hpp>
 
-struct PlayerConfig {};
-struct EnemyConfig {};
-struct BulletConfig {};
+struct PlayerConfig { int SR, CR, FR, FG, FB, OR, OG, OB, OT, V; float S ; };
+struct EnemyConfig { int SR, CR, OR, OG, OB, OT, VMin, VMax, L, SI ; float SMin, SMax ; };
+struct BulletConfig { int SR, CR, FR, FG, FB, OR, OG, OB, OT, V, L; float S ; };
 
 class Game {
 	sf::RenderWindow window;
 	EntityManager entityManager;
 	sf::Font font;
-	sf::Text Text;
+	std::unique_ptr<sf::Text> Text;
 	PlayerConfig playerConfig;
 	EnemyConfig enemyConfig;
 	BulletConfig bulletConfig;
@@ -23,7 +23,7 @@ class Game {
 	bool Paused = false;
 	bool Running = true;
 
-	std::shared_ptr<Entity> player;
+	std::shared_ptr<Entity> myplayer;
 
 	void init(const std::string& config);
 	void SetPaused(bool Paused);
