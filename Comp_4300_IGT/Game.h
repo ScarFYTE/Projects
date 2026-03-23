@@ -40,4 +40,9 @@ class Game {
 	void spawnBullet(std::shared_ptr<Entity> entity,const Vec2 & mousepos);
 	void spawnSpecialWeapon(std::shared_ptr<Entity> entity);
 
+public:
+	Game(const std::string& config);
+	
+	void Run();
+
 };
