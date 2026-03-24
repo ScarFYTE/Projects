@@ -48,6 +48,7 @@ public:
 		circle.setOutlineThickness(Thickness);
 		circle.setOrigin({ radius, radius });
 	}
+	float getRadius() const;
 };
 
 class CLifeSpan {
