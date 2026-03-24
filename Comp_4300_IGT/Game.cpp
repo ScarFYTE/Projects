@@ -14,6 +14,8 @@ void Game::init(const std::string& config) {
 
 Game::Game(const std::string& config) {
 	init(config);
+	int WindowWidth = 800;
+	int WindowHeight = 600;
 	window.create(sf::VideoMode({ 800, 600 }), "SFML Game");
 	font.openFromFile("assets/arial.ttf");
 	Text = std::make_unique<sf::Text>();
@@ -32,4 +34,62 @@ void Game::spawnPlayer() {
 	
 	myplayer = player;
 
+}
+
+
+
+void Game::Run() {
+	while (Running) {
+		sUserInput();
+		if (!Paused) {
+			sMovement();
+			sEnemySpawn();
+			sCollision();
+		}
+		sRender();
+		currentFrame++;
+	}
+}
+
+void Game::sCollision() {
+	// Collision logic goes here
+	for (auto& e : entityManager.GetEntities()) {
+		if(e->collision && e->shape){
+			// Check for collisions and handle them
+			if(e->transform->position.x + e->shape->getRadius() >window.getSize().x || e->transform->position.x - e->shape->getRadius() < 0 ){
+				e->transform->velocity.x *= -1; // Simple bounce effect
+			}
+			
+			if (e->transform->position.y + e->shape->getRadius() > window.getSize().y || e->transform->position.y - e->shape->getRadius() < 0) {
+				e->transform->velocity.y *= -1; // Simple bounce effect
+			}
+		}
+	}
+}
+
+void Game::sEnemySpawn() {
+	if (currentFrame - LastEnemySpawnTime >= enemyConfig.SI) {
+		spawnEnemy();
+		LastEnemySpawnTime = currentFrame;
+	}
+}
+
+void Game::sMovement() {
+	// Movement logic goes here
+	//User Input here
+
+	
+
+
+	//for all entities with a transform component, update their position based on their velocity except UserInput component
+	for (auto& e : entityManager.GetEntities()) {
+		if (e->transform) {
+			e->transform->position.x += e->transform->velocity.x;
+			e->transform->position.y += e->transform->velocity.y;
+		}
+	}
+}
+
+void Game::sUserInput() {
+	// User input handling goes here
 }
