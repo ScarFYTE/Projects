@@ -2,6 +2,6 @@
 
 
 int main() {
-	Game game("config.txt");
+	Game game("Config.txt");
 	game.Run();
 }

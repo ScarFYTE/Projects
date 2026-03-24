@@ -48,7 +48,14 @@ public:
 		circle.setOutlineThickness(Thickness);
 		circle.setOrigin({ radius, radius });
 	}
+	void setPosition(const Vec2& pos) {
+		circle.setPosition({ pos.x, pos.y });
+	}
+
 	float getRadius() const;
+	sf::CircleShape getShape() const {
+		return circle;
+	}
 };
 
 class CLifeSpan {

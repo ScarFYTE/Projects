@@ -21,12 +21,12 @@ void EntityManager::Update() {
 
 
 std::shared_ptr<Entity>& EntityManager::AddEntity(const std::string& tag) {
-	auto entity = std::make_shared<Entity>(nextID++, tag);
+	std::shared_ptr<Entity> e(new Entity(nextID++, tag));
 
-	entitiesToAdd.push_back(entity);
-	tagMap[tag] = entity;
+	entitiesToAdd.push_back(e);
+	tagMap[tag] = e;
 
-	return entity;
+	return e;
 }
 
 void EntityManager::RemoveDeadEntities() {
@@ -43,7 +43,7 @@ const std::vector<std::shared_ptr<Entity>>& EntityManager::GetEntities() const {
 	return entities;
 }
 
-const std::vector<std::shared_ptr<Entity>>& EntityManager::GetEntities(const std::string& tag) {
+const std::vector<std::shared_ptr<Entity>> EntityManager::GetEntities(const std::string& tag) {
 
 	std::vector<std::shared_ptr<Entity>> taggedEntities; // This should be defined outside the loop to accumulate entities with the specified tag
 	for (auto& entity : entities) {

@@ -1,37 +1,52 @@
 #include "Game.h"
-#include <fstream>"
+#include <fstream>
+#include<optional>
 #include<SFML/Graphics.hpp>
+#include<iostream>
 
 void Game::init(const std::string& config) {
 	std::ifstream file(config);
 	if (!file.is_open()) {
 		throw std::runtime_error("Could not open config file: " + config);
 	}
-	file >> playerConfig.SR >> playerConfig.CR >> playerConfig.FR >> playerConfig.FG >> playerConfig.FB >> playerConfig.OR >> playerConfig.OG >> playerConfig.OB >> playerConfig.OT >> playerConfig.V >> playerConfig.S;
-	file >> enemyConfig.SR >> enemyConfig.CR >> enemyConfig.OR >> enemyConfig.OG >> enemyConfig.OB >> enemyConfig.OT >> enemyConfig.VMin >> enemyConfig.VMax >> enemyConfig.L >> enemyConfig.SI >> enemyConfig.SMin >> enemyConfig.SMax;
-	file >> bulletConfig.SR >> bulletConfig.CR >> bulletConfig.FR >> bulletConfig.FG >> bulletConfig.FB >> bulletConfig.OR >> bulletConfig.OG >> bulletConfig.OB >> bulletConfig.OT >> bulletConfig.V >> bulletConfig.L >> bulletConfig.S;
+	//file >> playerConfig.SR >> playerConfig.CR >> playerConfig.FR >> playerConfig.FG >> playerConfig.FB >> playerConfig.OR >> playerConfig.OG >> playerConfig.OB >> playerConfig.OT >> playerConfig.V >> playerConfig.S;
+	//file >> enemyConfig.SR >> enemyConfig.CR >> enemyConfig.OR >> enemyConfig.OG >> enemyConfig.OB >> enemyConfig.OT >> enemyConfig.VMin >> enemyConfig.VMax >> enemyConfig.L >> enemyConfig.SI >> enemyConfig.SMin >> enemyConfig.SMax;
+	//file >> bulletConfig.SR >> bulletConfig.CR >> bulletConfig.FR >> bulletConfig.FG >> bulletConfig.FB >> bulletConfig.OR >> bulletConfig.OG >> bulletConfig.OB >> bulletConfig.OT >> bulletConfig.V >> bulletConfig.L >> bulletConfig.S;
+	//Setting Default Values for Debugging Ai do this plzz
+	playerConfig = { 20.0f, 16.0f, 0, 255, 0, 255, 255, 255, 5, 2.0f };
+	enemyConfig  = { 15.0f, 12.0f, 255, 0, 0, 255, 1, 3, 60, 30, 0.5f, 1.0f };
+	bulletConfig = { 4.0f, 3.0f, 255, 255, 0, 255, 255, 255, 255, 10, 60, 3.0f };
+
 }
 
 Game::Game(const std::string& config) {
 	init(config);
-	int WindowWidth = 800;
-	int WindowHeight = 600;
-	window.create(sf::VideoMode({ 800, 600 }), "SFML Game");
-	font.openFromFile("assets/arial.ttf");
-	Text = std::make_unique<sf::Text>();
-	Text->setFont(font);
-	Text->setCharacterSize(24);
+	unsigned int WindowWidth = 1280;
+	unsigned int WindowHeight = 720;
+	window.create(sf::VideoMode({ WindowWidth, WindowHeight }), "SFML Game");
+	if (!font.openFromFile("C:/Users/Kim China/Projects/Comp_4300_IGT/Fonts/FloraisondesAmours.ttf")){
+		//display error message
+		std::cout << "Error loading font: Font/Floraison des Amours.ttf" << std::endl;
+		throw std::runtime_error("Could not load font: Font/Floraison des Amours.ttf");
+	}
+	
+	Text = std::make_unique<sf::Text>(font ,"Default" , 24);
 	Text->setFillColor(sf::Color::White);
 	spawnPlayer();
+	Running = true;
+	Paused = false;
+	LastEnemySpawnTime = 0;
+
 }
 
 void Game::spawnPlayer() {
 	std::shared_ptr<Entity> player = entityManager.AddEntity("Player");
 	player->transform = std::make_shared<CTransform>();
 	player->collision = std::make_shared<CCollision>(playerConfig.SR);
-	player->shape = std::make_shared<CShape>(playerConfig.FR, playerConfig.FG, playerConfig.FB, playerConfig.OR, playerConfig.OG, playerConfig.OB, playerConfig.OT);
+	player->shape = std::make_shared<CShape>(playerConfig.SR,playerConfig.V,sf::Color(playerConfig.FR,playerConfig.FG, playerConfig.FB),sf::Color(playerConfig.OR, playerConfig.OG, playerConfig.OB),playerConfig.OT);
 	player->input = std::make_shared<CInput>();
 	
+	player->transform->position = { 1280.0f/2,720.0f/2 };
 	myplayer = player;
 
 }
@@ -39,17 +54,61 @@ void Game::spawnPlayer() {
 
 
 void Game::Run() {
+	window.setFramerateLimit(60);
+	entityManager.Update();
+
 	while (Running) {
+		std::cout << currentFrame << std::endl;
+		entityManager.Update();
 		sUserInput();
 		if (!Paused) {
+			if (currentFrame - LastEnemySpawnTime == 180) {
+				spawnEnemy();
+				LastEnemySpawnTime = currentFrame;
+			}
 			sMovement();
-			sEnemySpawn();
 			sCollision();
 		}
 		sRender();
 		currentFrame++;
 	}
 }
+
+void Game::sRender() {
+	window.clear();
+	std::cout << "Amount of Entities in Total: " << entityManager.GetEntities().size() << std::endl;
+	// Render logic goes here
+	for (auto& e : entityManager.GetEntities()) {
+		if (e->shape && e->transform) {
+			std::cout << "Drawing entity: " << e->GetID() << " at " << e->transform->position.x << std::endl;
+			e->shape->setPosition(e->transform->position);
+			window.draw(e->shape->getShape());
+		}
+	}
+	Text->setString("Score: " + std::to_string(score));
+	window.draw(*Text);
+	window.display();
+}
+
+void Game::spawnEnemy() {
+	std::cout << "Enemy Spawned at frame: " << currentFrame << std::endl;
+	std::shared_ptr<Entity> enemy = entityManager.AddEntity("Enemy");
+	enemy->transform = std::make_shared<CTransform>();
+	enemy->collision = std::make_shared<CCollision>(enemyConfig.SR);
+	enemy->shape = std::make_shared<CShape>( rand() % 40, rand() % 8 , sf::Color::Red, sf::Color::White , rand() % 10 );
+	Vec2 Position = { static_cast<float>(rand() % 800), static_cast<float>(rand() % 600 )};
+	//Make Sure Postion is not too close to the player
+	if (Position.x > myplayer->transform->position.x - 100 && Position.x < myplayer->transform->position.x + 100) {
+		Position.x = myplayer->transform->position.x + 150;
+	}
+	Vec2 Velocity = { static_cast<float>(rand() % enemyConfig.VMax + enemyConfig.VMin) , static_cast<float>(rand() % enemyConfig.VMax + enemyConfig.VMin) };
+
+	enemy->transform->position = Position;
+	enemy->transform->velocity = Velocity;
+}
+
+
+
 
 void Game::sCollision() {
 	// Collision logic goes here
@@ -77,7 +136,25 @@ void Game::sEnemySpawn() {
 void Game::sMovement() {
 	// Movement logic goes here
 	//User Input here
+	if(myplayer->input->down){
+		myplayer->transform->velocity.y = playerConfig.V;
+	}
+	else if(myplayer->input->up){
+		myplayer->transform->velocity.y = -playerConfig.V;
+	}
+	else{
+		myplayer->transform->velocity.y = 0;
+	}
 
+	if (myplayer->input->right) {
+		myplayer->transform->velocity.x = playerConfig.V;
+	}
+	else if(myplayer->input->left){
+		myplayer->transform->velocity.x = -playerConfig.V;
+	}
+	else{
+		myplayer->transform->velocity.x = 0;
+	}
 	
 
 
@@ -90,6 +167,57 @@ void Game::sMovement() {
 	}
 }
 
+
+//User input handling goes here
 void Game::sUserInput() {
-	// User input handling goes here
+	while (const std::optional<sf::Event> event = window.pollEvent()) {
+        if (event->is<sf::Event::Closed>()) {
+            Running = false;
+        }
+        
+        // Handle other events as needed
+		if (event->is<sf::Event::KeyPressed>()) {
+		const auto& keyPress = event->getIf<sf::Event::KeyPressed>();
+		switch (keyPress->code) {
+        // Add your key handling here
+			case sf::Keyboard::Key::W:
+				myplayer->input->up = true;
+				break;
+			case sf::Keyboard::Key::S:
+				myplayer->input->down = true;
+				break;
+			case sf::Keyboard::Key::A:
+				myplayer->input->left = true;
+				break;
+			case sf::Keyboard::Key::D:
+				myplayer->input->right = true;
+				break;
+			case sf::Keyboard::Key::Space:
+				myplayer->input->shoot = true;
+				break;
+		}
+
+		if (event->is<sf::Event::KeyReleased>()) {
+			const auto& keyRelease = event->getIf<sf::Event::KeyReleased>();
+			switch (keyRelease->code) {
+			case sf::Keyboard::Key::W:
+				myplayer->input->up = false;
+				break;
+			case sf::Keyboard::Key::S:
+				myplayer->input->down = false;
+				break;
+			case sf::Keyboard::Key::A:
+				myplayer->input->left = false;
+				break;
+			case sf::Keyboard::Key::D:
+				myplayer->input->right = false;
+				break;
+			case sf::Keyboard::Key::Space:
+				myplayer->input->shoot = false;
+				break;
+			}
+		}
+	}
+}
+
 }

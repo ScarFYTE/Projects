@@ -36,7 +36,7 @@ void UpdatePosition(sf::Shape& shape, sf::Vector2f& moveSpeed) {
 	shape.setPosition({ shape.getPosition().x + moveSpeed.x, shape.getPosition().y + moveSpeed.y });
 }
 
-int main() {
+int testing() {
 	sf::RenderWindow window(sf::VideoMode({ Width, Height }), "SFML Window Test");
 	window.setFramerateLimit(60);
 	

@@ -4,9 +4,9 @@
 
 #include<SFML/Graphics.hpp>
 
-struct PlayerConfig { int SR, CR, FR, FG, FB, OR, OG, OB, OT, V; float S ; };
-struct EnemyConfig { int SR, CR, OR, OG, OB, OT, VMin, VMax, L, SI ; float SMin, SMax ; };
-struct BulletConfig { int SR, CR, FR, FG, FB, OR, OG, OB, OT, V, L; float S ; };
+struct PlayerConfig { float SR, CR;int FR, FG, FB, OR, OG, OB; float V, S ,OT ; };
+struct EnemyConfig { float SR, CR;int OR, OG, OB, OT, VMin, VMax, L, SI; float SMin, SMax; };
+struct BulletConfig { float SR, CR;int FR, FG, FB, OR, OG, OB, OT, V, L; float S; };
 
 class Game {
 	sf::RenderWindow window;
@@ -16,7 +16,7 @@ class Game {
 	PlayerConfig playerConfig;
 	EnemyConfig enemyConfig;
 	BulletConfig bulletConfig;
-
+	
 	int score = 0;
 	int currentFrame = 0;
 	int LastEnemySpawnTime = 0;
