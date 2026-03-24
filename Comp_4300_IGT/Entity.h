@@ -24,9 +24,9 @@ public:
 	std::shared_ptr<CShape> shape;
 	std::shared_ptr<CLifeSpan> lifespan;
 
-	void Destroy() {}
-	bool IsActive() const {}
-	std::string& GetTag() const {}
-	size_t GetID() const {}
+	void Destroy();
+	bool IsActive() const;
+	std::string& GetTag() const;
+	size_t GetID() const;
 
 };
