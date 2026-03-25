@@ -51,6 +51,9 @@ public:
 	void setPosition(const Vec2& pos) {
 		circle.setPosition({ pos.x, pos.y });
 	}
+	void setRotation(float rot) {
+		circle.setRotation(sf::degrees(rot));
+	}
 
 	float getRadius() const;
 	sf::CircleShape getShape() const {

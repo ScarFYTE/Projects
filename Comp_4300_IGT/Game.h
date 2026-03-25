@@ -5,7 +5,8 @@
 #include<SFML/Graphics.hpp>
 
 struct PlayerConfig { float SR, CR;int FR, FG, FB, OR, OG, OB; float V, S ,OT ; };
-struct EnemyConfig { float SR, CR;int OR, OG, OB, OT, VMin, VMax, L, SI; float SMin, SMax; };
+
+struct EnemyConfig { float SR, CR;int OR, OG, OB, OT, VMin, VMax, L, SI,  SMin, SMax; };
 struct BulletConfig { float SR, CR;int FR, FG, FB, OR, OG, OB, OT, V, L; float S; };
 
 class Game {
