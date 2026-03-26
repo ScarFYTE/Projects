@@ -4,9 +4,9 @@
 
 #include<SFML/Graphics.hpp>
 
-struct PlayerConfig { float SR, CR;int FR, FG, FB, OR, OG, OB; float V, S ,OT ; };
+struct PlayerConfig { float SR, CR;int FR, FG, FB, OR, OG, OB; float V, S, OT; };
 
-struct EnemyConfig { float SR, CR;int OR, OG, OB, OT, VMin, VMax, L, SI,  SMin, SMax; };
+struct EnemyConfig { float SR, CR;int OR, OG, OB, OT, VMin, VMax, L, SI, SMin, SMax; };
 struct BulletConfig { float SR, CR;int FR, FG, FB, OR, OG, OB, OT, V, L; float S; };
 
 class Game {
@@ -17,7 +17,7 @@ class Game {
 	PlayerConfig playerConfig;
 	EnemyConfig enemyConfig;
 	BulletConfig bulletConfig;
-	
+
 	int score = 0;
 	int currentFrame = 0;
 	int LastEnemySpawnTime = 0;
@@ -38,12 +38,12 @@ class Game {
 	void spawnPlayer();
 	void spawnEnemy();
 	void spawnSmallEnemy(std::shared_ptr<Entity> entity);
-	void spawnBullet(std::shared_ptr<Entity> entity,const Vec2 & mousepos);
+	void spawnBullet(std::shared_ptr<Entity> entity, const Vec2& mousepos);
 	void spawnSpecialWeapon(std::shared_ptr<Entity> entity);
 
 public:
 	Game(const std::string& config);
-	
+
 	void Run();
 
 };

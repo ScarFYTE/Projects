@@ -7,8 +7,8 @@
 
 class Entity {
 	friend class EntityManager;
-	
-	
+
+
 	bool active = true;
 	size_t id = 0;
 	std::string tag = "Default";

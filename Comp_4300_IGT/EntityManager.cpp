@@ -20,7 +20,7 @@ void EntityManager::Update() {
 		if (entity->lifespan) {
 			entity->lifespan->remaining--;
 			if (entity->lifespan->remaining <= 0) {
-				entity->active=false;
+				entity->active = false;
 			}
 		}
 	}
@@ -38,19 +38,20 @@ std::shared_ptr<Entity>& EntityManager::AddEntity(const std::string& tag) {
 }
 
 void EntityManager::RemoveDeadEntities() {
-    for (auto& e : entities) {
-        if (e && !e->IsActive()) {
-            tagMap.erase(e->GetTag());
-        }
-    }
+	for (auto& e : entities) {
+		if (e && !e->IsActive()) {
+			tagMap.erase(e->GetTag());
+		}
+	}
 
-    for (auto it = entities.begin(); it != entities.end(); /* no increment here */) {
-        if (!*it || !(*it)->IsActive()) {
-            it = entities.erase(it); // erase returns the next valid iterator
-        } else {
-            ++it;
-        }
-    }
+	for (auto it = entities.begin(); it != entities.end(); /* no increment here */) {
+		if (!*it || !(*it)->IsActive()) {
+			it = entities.erase(it); // erase returns the next valid iterator
+		}
+		else {
+			++it;
+		}
+	}
 }
 
 const std::vector<std::shared_ptr<Entity>>& EntityManager::GetEntities() const {
@@ -61,7 +62,7 @@ const std::vector<std::shared_ptr<Entity>> EntityManager::GetEntities(const std:
 
 	std::vector<std::shared_ptr<Entity>> taggedEntities; // This should be defined outside the loop to accumulate entities with the specified tag
 	for (auto& entity : entities) {
-		if(entity->GetTag() == tag) {
+		if (entity->GetTag() == tag) {
 			taggedEntities.push_back(entity);
 		}
 	}
