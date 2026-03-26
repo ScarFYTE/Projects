@@ -3,6 +3,7 @@
 #include<optional>
 #include<SFML/Graphics.hpp>
 #include<iostream>
+#include<cmath>
 
 void Game::init(const std::string& config) {
 	std::ifstream file(config);
@@ -15,8 +16,7 @@ void Game::init(const std::string& config) {
 	//Setting Default Values for Debugging Ai do this plzz
 	playerConfig = { 30.0f, 16.0f, 255, 0, 0, 255, 0, 0, 8, 2.0f };
 	enemyConfig  = { 15.0f, 12.0f, 255, 255, 255, 5, 1, 3, 60, 30, 3, 10 };
-	bulletConfig = { 4.0f, 3.0f, 255, 255, 0, 255, 255, 255, 255, 10, 60, 3.0f };
-
+	bulletConfig = { 4.0f, 3.0f, 255, 255, 0, 255, 255, 255, 1, 10, 60, 3.0f };
 }
 
 Game::Game(const std::string& config) {
@@ -70,17 +70,29 @@ void Game::Run() {
 		currentFrame++;
 	}
 }
+void SetPosition(std::shared_ptr<Entity> entity) {
+	entity->shape->setPosition(entity->transform->position);
+	entity->shape->setRotation(entity->transform->rotation);
+}
+
+void LifeSpanEffect(std::shared_ptr<Entity> entity) {
+	// Fade Effect based on remaining lifespan
+	sf::Color newColor = entity->shape->getShape().getFillColor();
+	newColor.a = entity->lifespan->remaining * 255.0f / entity->lifespan->total; // Assuming total is the initial lifespan
+	entity->shape->getShape().setFillColor(newColor);
+}
 
 void Game::sRender() {
 	window.clear();
 	//std::cout << "Amount of Entities in Total: " << entityManager.GetEntities().size() << std::endl;
 	// Render logic goes here
 	for (auto& e : entityManager.GetEntities()) {
-		if (e->shape && e->transform) {
-			//std::cout << "Drawing entity: " << e->GetID() << " at " << e->transform->position.x << std::endl;
-			e->shape->setPosition(e->transform->position);
-			e->shape->setRotation(e->transform->rotation);
-			window.draw(e->shape->getShape());
+		if (e->transform && e->shape) SetPosition(e);
+
+		window.draw(e->shape->getShape());
+		
+		if(e->lifespan){
+			LifeSpanEffect(e);
 		}
 	}
 	Text->setString("Score: " + std::to_string(score));
@@ -128,7 +140,54 @@ void Game::spawnEnemy() {
     enemy->transform->velocity = Velocity;
 }
 
+void Game::spawnSmallEnemy(std::shared_ptr<Entity> entity) {
+	int Amount = entity->shape->getPointCount();
+	float AngleStep = 360.0f / Amount;
+	int newRadius = entity->shape->getRadius() / 2;
+	float speed = bulletConfig.S;
+	for(int i=0 ; i<Amount ; i++){
+		std::shared_ptr<Entity> smallEnemy = entityManager.AddEntity("Enemy");
+		smallEnemy->transform = std::make_shared<CTransform>();
+		smallEnemy->collision = std::make_shared<CCollision>(newRadius);
+		smallEnemy->lifespan = std::make_shared<CLifeSpan>(enemyConfig.L);
+		smallEnemy->shape = std::make_shared<CShape>(
+			newRadius,
+			Amount, // small enemies are same shape as parent but smaller
+			sf::Color(rand() % enemyConfig.OR, rand() % enemyConfig.OG, rand() % enemyConfig.OB),
+			sf::Color(rand() % enemyConfig.OR, rand() % enemyConfig.OG, rand() % enemyConfig.OB),
+			enemyConfig.OT
+		);
+		smallEnemy->transform->position = entity->transform->position;
+		Vec2 NewVelocity = {
+			speed * cos(sf::degrees(AngleStep * i).asRadians()),
+			speed * sin(sf::degrees(AngleStep * i).asRadians())
+		};
+		smallEnemy->transform->velocity = NewVelocity;
+	}
+}
 
+void Game::spawnBullet(std::shared_ptr<Entity> entity, const Vec2& mousepos) {
+	std::shared_ptr<Entity> bullet = entityManager.AddEntity("Bullet");
+	bullet->transform = std::make_shared<CTransform>();
+	bullet->collision = std::make_shared<CCollision>(bulletConfig.SR);
+	bullet->lifespan = std::make_shared<CLifeSpan>(bulletConfig.L);
+	bullet->shape = std::make_shared<CShape>(
+		bulletConfig.SR,
+		myplayer->shape->getPointCount(), // bullets are Same Shape as player but smaller
+		sf::Color(bulletConfig.FR, bulletConfig.FG, bulletConfig.FB),
+		sf::Color(bulletConfig.OR, bulletConfig.OG, bulletConfig.OB),
+		bulletConfig.OT
+	);
+	Vec2 direction = { mousepos.x - entity->transform->position.x, mousepos.y - entity->transform->position.y };
+	float length = sqrt(direction.x * direction.x + direction.y * direction.y);
+	if (length != 0) {
+		direction.x /= length;
+		direction.y /= length;
+	}
+	Vec2 Velocity = { direction.x * bulletConfig.V, direction.y * bulletConfig.V };
+	bullet->transform->position = entity->transform->position;
+	bullet->transform->velocity = Velocity;
+}
 
 
 void Game::sCollision() {
@@ -145,7 +204,25 @@ void Game::sCollision() {
 			}
 		}
 	}
+	//Check Collision of Bulelts with Enemies and Player with Enemies
+	for (auto& Bullets : entityManager.GetEntities("Bullet")) {
+		for(auto& Enemies : entityManager.GetEntities("Enemy")){
+			if(Bullets->collision && Enemies->collision){
+				float distance = pow(Bullets->transform->position.x - Enemies->transform->position.x, 2) + pow(Bullets->transform->position.y - Enemies->transform->position.y, 2);
+				int combinedRadius = Bullets->collision->radius + Enemies->collision->radius;
+				if (distance <= combinedRadius * combinedRadius) {
+					Bullets->Destroy(); // Destroy bullet
+					Enemies->Destroy(); // Destroy enemy
+					score += 10; // Increase score
+					if(Enemies->shape->getRadius() > enemyConfig.SR / 2){ // If enemy is big enough, spawn smaller enemies
+						spawnSmallEnemy(Enemies);
+					}
+				}
+			}
+		}
+	}
 }
+
 
 void Game::sEnemySpawn() {
 	if (currentFrame - LastEnemySpawnTime == 180) {
@@ -157,26 +234,23 @@ void Game::sEnemySpawn() {
 void Game::sMovement() {
 	// Movement logic goes here
 	//User Input here
-	if(myplayer->input->down){
+	myplayer->transform->velocity = { 0.0f, 0.0f }; // Reset velocity before applying input
+
+	if(myplayer->input->down && myplayer->transform->position.y + playerConfig.SR < window.getSize().y){
+		// Prevent moving out of bounds
 		myplayer->transform->velocity.y = playerConfig.V;
 	}
-	else if(myplayer->input->up){
+	else if(myplayer->input->up && myplayer->transform->position.y - playerConfig.SR > 0){
 		myplayer->transform->velocity.y = -playerConfig.V;
 	}
-	else{
-		myplayer->transform->velocity.y = 0;
-	}
 
-	if (myplayer->input->right) {
+	if (myplayer->input->right && myplayer->transform->position.x + playerConfig.SR < window.getSize().x) {
 		myplayer->transform->velocity.x = playerConfig.V;
 	}
-	else if(myplayer->input->left){
+	else if(myplayer->input->left && myplayer->transform->position.x - playerConfig.SR > 0){
 		myplayer->transform->velocity.x = -playerConfig.V;
 	}
-	else{
-		myplayer->transform->velocity.x = 0;
-	}
-	
+
 
 
 	//for all entities with a transform component, update their position based on their velocity except UserInput component
@@ -241,6 +315,27 @@ void Game::sUserInput() {
 			case sf::Keyboard::Key::Space:
 				myplayer->input->shoot = false;
 				break;
+			}
+		}
+
+		if (event->is<sf::Event::MouseButtonPressed>()) {
+			const auto& mousePress = event->getIf<sf::Event::MouseButtonPressed>();
+			switch (mousePress->button) {
+			case sf::Mouse::Button::Left:
+				myplayer->input->shoot = true;
+				Vec2 mousePos = { static_cast<float>(mousePress->position.x), static_cast<float>(mousePress->position.y) };
+				spawnBullet(myplayer, mousePos);
+				break;
+				// Handle other mouse buttons if needed
+			}
+		}
+		if (event->is<sf::Event::MouseButtonReleased>()) {
+			const auto& mouseRelease = event->getIf<sf::Event::MouseButtonReleased>();
+			switch (mouseRelease->button) {
+			case sf::Mouse::Button::Left:
+				myplayer->input->shoot = false;
+				break;
+				// Handle other mouse buttons if needed
 			}
 		}
 	}

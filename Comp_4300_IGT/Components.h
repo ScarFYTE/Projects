@@ -59,6 +59,10 @@ public:
 	sf::CircleShape getShape() const {
 		return circle;
 	}
+
+	int getPointCount() const {
+		return circle.getPointCount();
+	}
 };
 
 class CLifeSpan {

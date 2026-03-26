@@ -16,6 +16,14 @@ void EntityManager::Update() {
 			// Update logic for the entity can be added here
 		}
 	}
+	for (auto& entity : entities) {
+		if (entity->lifespan) {
+			entity->lifespan->remaining--;
+			if (entity->lifespan->remaining <= 0) {
+				entity->active=false;
+			}
+		}
+	}
 	RemoveDeadEntities();
 }
 
@@ -30,13 +38,19 @@ std::shared_ptr<Entity>& EntityManager::AddEntity(const std::string& tag) {
 }
 
 void EntityManager::RemoveDeadEntities() {
-	// Remove entities that are not active
-	for(auto & e : entities) {
-		if(!e->IsActive()) {
-			entities.erase(std::remove(entities.begin(), entities.end(), e), entities.end());
-			tagMap.erase(e->GetTag());
-		}
-	}
+    for (auto& e : entities) {
+        if (e && !e->IsActive()) {
+            tagMap.erase(e->GetTag());
+        }
+    }
+
+    for (auto it = entities.begin(); it != entities.end(); /* no increment here */) {
+        if (!*it || !(*it)->IsActive()) {
+            it = entities.erase(it); // erase returns the next valid iterator
+        } else {
+            ++it;
+        }
+    }
 }
 
 const std::vector<std::shared_ptr<Entity>>& EntityManager::GetEntities() const {
