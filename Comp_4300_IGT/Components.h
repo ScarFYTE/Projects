@@ -32,6 +32,7 @@ public:
 	bool left = false;
 	bool right = false;
 	bool shoot = false;
+	bool special = false;
 
 	CInput() {}
 };
@@ -54,7 +55,9 @@ public:
 	void setRotation(float rot) {
 		circle.setRotation(sf::degrees(rot));
 	}
-
+	void setFillColor(const sf::Color& color) {
+		circle.setFillColor(color);
+	}
 	float getRadius() const;
 	sf::CircleShape getShape() const {
 		return circle;

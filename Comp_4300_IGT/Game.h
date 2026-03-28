@@ -21,8 +21,11 @@ class Game {
 	int score = 0;
 	int currentFrame = 0;
 	int LastEnemySpawnTime = 0;
+	int LastPlayerSpecialWeaponTime = -1800;
 	bool Paused = false;
 	bool Running = true;
+	bool mIsSpecialActive = false;
+	int  mSpecialStartTime = 0;
 
 	std::shared_ptr<Entity> myplayer;
 
@@ -34,12 +37,14 @@ class Game {
 	void sRender();
 	void sEnemySpawn();
 	void sCollision();
+	void sLifespan();
 
 	void spawnPlayer();
 	void spawnEnemy();
 	void spawnSmallEnemy(std::shared_ptr<Entity> entity);
 	void spawnBullet(std::shared_ptr<Entity> entity, const Vec2& mousepos);
 	void spawnSpecialWeapon(std::shared_ptr<Entity> entity);
+	void RespawnPlayer();
 
 public:
 	Game(const std::string& config);

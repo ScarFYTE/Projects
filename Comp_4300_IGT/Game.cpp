@@ -1,9 +1,10 @@
 #include "Game.h"
 #include <fstream>
-#include <optional>
-#include <SFML/Graphics.hpp>
-#include <iostream>
-#include <cmath>
+#include<optional>
+#include<SFML/Graphics.hpp>
+#include<iostream>
+#include<cmath>
+#include <cstdint>
 
 // ---------------------------------------------------------------------------
 // Initialization
@@ -14,15 +15,13 @@ void Game::init(const std::string& config) {
 	if (!file.is_open()) {
 		throw std::runtime_error("Could not open config file: " + config);
 	}
-
-	// file >> playerConfig.SR >> playerConfig.CR >> playerConfig.FR >> playerConfig.FG >> playerConfig.FB >> playerConfig.OR >> playerConfig.OG >> playerConfig.OB >> playerConfig.OT >> playerConfig.V >> playerConfig.S;
-	// file >> enemyConfig.SR >> enemyConfig.CR >> enemyConfig.OR >> enemyConfig.OG >> enemyConfig.OB >> enemyConfig.OT >> enemyConfig.VMin >> enemyConfig.VMax >> enemyConfig.L >> enemyConfig.SI >> enemyConfig.SMin >> enemyConfig.SMax;
-	// file >> bulletConfig.SR >> bulletConfig.CR >> bulletConfig.FR >> bulletConfig.FG >> bulletConfig.FB >> bulletConfig.OR >> bulletConfig.OG >> bulletConfig.OB >> bulletConfig.OT >> bulletConfig.V >> bulletConfig.L >> bulletConfig.S;
-
-	// Setting default values for debugging
-	playerConfig = { 30.0f, 16.0f, 255, 0, 0, 255, 0, 0, 8, 2.0f };
-	enemyConfig = { 15.0f, 12.0f, 255, 255, 255, 5, 1, 3, 60, 30, 3, 10 };
-	bulletConfig = { 4.0f, 3.0f, 255, 255, 0, 255, 255, 255, 1, 10, 60, 3.0f };
+	//file >> playerConfig.SR >> playerConfig.CR >> playerConfig.FR >> playerConfig.FG >> playerConfig.FB >> playerConfig.OR >> playerConfig.OG >> playerConfig.OB >> playerConfig.OT >> playerConfig.V >> playerConfig.S;
+	//file >> enemyConfig.SR >> enemyConfig.CR >> enemyConfig.OR >> enemyConfig.OG >> enemyConfig.OB >> enemyConfig.OT >> enemyConfig.VMin >> enemyConfig.VMax >> enemyConfig.L >> enemyConfig.SI >> enemyConfig.SMin >> enemyConfig.SMax;
+	//file >> bulletConfig.SR >> bulletConfig.CR >> bulletConfig.FR >> bulletConfig.FG >> bulletConfig.FB >> bulletConfig.OR >> bulletConfig.OG >> bulletConfig.OB >> bulletConfig.OT >> bulletConfig.V >> bulletConfig.L >> bulletConfig.S;
+	//Setting Default Values for Debugging Ai do this plzz
+	playerConfig = { 30.0f, 16.0f, 0, 0, 0, 255, 255, 0, 8, 5.0f, 3 };
+	enemyConfig = { 30.0f, 30.0f, 255, 255, 255, 0, 1, 3, 60, 120, 3, 10 };
+	bulletConfig = { 4.0f, 3.0f, 255, 255, 0, 255, 255, 255, 1, 10, 120, 3.0f };
 }
 
 Game::Game(const std::string& config) {
@@ -31,9 +30,8 @@ Game::Game(const std::string& config) {
 	unsigned int WindowWidth = 1280;
 	unsigned int WindowHeight = 720;
 	window.create(sf::VideoMode({ WindowWidth, WindowHeight }), "SFML Game");
-
 	if (!font.openFromFile("C:/Users/Kim China/Projects/Comp_4300_IGT/Fonts/FloraisondesAmours.ttf")) {
-		// display error message
+		//display error message
 		std::cout << "Error loading font: Font/Floraisn des Amours.ttf" << std::endl;
 		throw std::runtime_error("Could not load font: Font/Floraison des Amours.ttf");
 	}
@@ -59,50 +57,124 @@ void Game::spawnPlayer() {
 	player->collision = std::make_shared<CCollision>(playerConfig.SR);
 	player->shape = std::make_shared<CShape>(
 		playerConfig.SR,
-		playerConfig.V,
+		static_cast<int>(playerConfig.S),   // already good
 		sf::Color(playerConfig.FR, playerConfig.FG, playerConfig.FB),
 		sf::Color(playerConfig.OR, playerConfig.OG, playerConfig.OB),
 		playerConfig.OT
 	);
 	player->input = std::make_shared<CInput>();
 
-	player->transform->position = { 1280.0f / 2, 720.0f / 2 };
+	player->transform->position = { 1280.0f / 2,720.0f / 2 };
 	myplayer = player;
 }
 
-void Game::spawnEnemy() {
-	std::cout << "Enemy Spawned at Frame: " << currentFrame << std::endl;
-	std::cout << entityManager.GetEntities().size() << std::endl;
+void Game::spawnSpecialWeapon(std::shared_ptr<Entity> entity) {
+	// Implement special weapon spawning logic here
+	int Amount = entity->shape->getPointCount() + 4;// Example: spawn N bullets in a circular patternw
+	for (int i = 0;i < Amount;i++) {
+		spawnBullet(entity, { entity->transform->position.x + cos(sf::degrees(360.0f / Amount * i).asRadians()) * 100, entity->transform->position.y + sin(sf::degrees(360.0f / Amount * i).asRadians()) * 100 });
+	}
+}
 
+
+
+void Game::Run() {
+	window.setFramerateLimit(60);
+	entityManager.Update();
+
+	while (Running) {
+		entityManager.Update();
+		sUserInput();
+		if (!Paused) {
+			sEnemySpawn();
+			sMovement();
+			sCollision();
+			sLifespan();
+		}
+		sRender();
+		currentFrame++;
+	}
+}
+void SetPosition(std::shared_ptr<Entity> entity) {
+	entity->shape->setPosition(entity->transform->position);
+	entity->shape->setRotation(entity->transform->rotation);
+}
+
+void Game::sLifespan() {
+	for (auto& e : entityManager.GetEntities()) {
+		if (!e->lifespan) { continue; }
+
+		// 1. Update the math
+		if (e->lifespan->remaining > 0) {
+			e->lifespan->remaining--;
+
+			// 2. Calculate Alpha based on 255 (Max Opacity)
+			// This ensures it fades linearly from 255 to 0
+			float ratio = (float)e->lifespan->remaining / (float)e->lifespan->total;
+
+			sf::Color fillColor = e->shape->getShape().getFillColor();
+			sf::Color outlineColor = e->shape->getShape().getOutlineColor();
+
+			// Set alpha based on the ratio
+			fillColor.a = static_cast<std::uint8_t>(255 * ratio);
+			outlineColor.a = static_cast<std::uint8_t>(255 * ratio);
+			e->shape->setFillColor(fillColor);
+		}
+
+		// 3. Destroy if time is up
+		if (e->lifespan->remaining <= 0) {
+			e->Destroy();
+		}
+	}
+}
+
+void Game::sRender() {
+	window.clear();
+	//std::cout << "Amount of Entities in Total: " << entityManager.GetEntities().size() << std::endl;
+	// Render logic goes here
+	for (auto& e : entityManager.GetEntities()) {
+		if (e->transform && e->shape) {
+			SetPosition(e);
+			window.draw(e->shape->getShape());
+		}
+	}
+	Text->setString("Score: " + std::to_string(score));
+	window.draw(*Text);
+	window.display();
+}
+
+void Game::spawnEnemy() {
+	float size = rand() % (int)enemyConfig.SR + enemyConfig.SR / 2.5;
 	std::shared_ptr<Entity> enemy = entityManager.AddEntity("Enemy");
 	enemy->transform = std::make_shared<CTransform>();
-	enemy->collision = std::make_shared<CCollision>(enemyConfig.SR);
+	enemy->collision = std::make_shared<CCollision>(size);
 
-	// Sides between SMin and SMax
-	int sides = enemyConfig.SMin + (rand() % (int)(enemyConfig.SMax - enemyConfig.SMin + 1));
+	// sides between SMin and SMax
+	int sides = static_cast<int>(playerConfig.S);
+	if (sides <= 0) sides = 3;
 
 	enemy->shape = std::make_shared<CShape>(
-		enemyConfig.SR,
+		size,
 		sides,
-		// You currently do not have FR/FG/FB for enemy, so use outline color for fill too
+		// you currently don’t have FR/FG/FB for enemy, so use outline color for fill too
 		sf::Color(rand() % enemyConfig.OR, rand() % enemyConfig.OG, rand() % enemyConfig.OB),
 		sf::Color(rand() % enemyConfig.OR, rand() % enemyConfig.OG, rand() % enemyConfig.OB),
 		enemyConfig.OT
 	);
 
-	// Random spawn position in window
+	// random spawn position in window
 	Vec2 Position = {
 		static_cast<float>(rand() % window.getSize().x),
 		static_cast<float>(rand() % window.getSize().y)
 	};
 
-	// Keep away from player on X
+	// keep away from player on X
 	if (Position.x > myplayer->transform->position.x - 100 &&
 		Position.x < myplayer->transform->position.x + 100) {
 		Position.x = myplayer->transform->position.x + 150;
 	}
 
-	// Random velocity using VMin/VMax
+	// random velocity using VMin/VMax
 	float vx = static_cast<float>(rand() % (enemyConfig.VMax - enemyConfig.VMin + 1) + enemyConfig.VMin);
 	float vy = static_cast<float>(rand() % (enemyConfig.VMax - enemyConfig.VMin + 1) + enemyConfig.VMin);
 	Vec2 Velocity = { vx, vy };
@@ -116,7 +188,6 @@ void Game::spawnSmallEnemy(std::shared_ptr<Entity> entity) {
 	float AngleStep = 360.0f / Amount;
 	int newRadius = entity->shape->getRadius() / 2;
 	float speed = bulletConfig.S;
-
 	for (int i = 0; i < Amount; i++) {
 		std::shared_ptr<Entity> smallEnemy = entityManager.AddEntity("Enemy");
 		smallEnemy->transform = std::make_shared<CTransform>();
@@ -232,40 +303,49 @@ void Game::sRender() {
 void Game::sCollision() {
 	// Simple boundary collision and bounce
 	for (auto& e : entityManager.GetEntities()) {
-		if (e->collision && e->shape) {
-			if (e->transform->position.x + e->shape->getRadius() > window.getSize().x ||
-				e->transform->position.x - e->shape->getRadius() < 0) {
-				e->transform->velocity.x *= -1;
+		if (e->collision && e->shape && e->transform) {
+			// Check for collisions and handle them
+			if (e->transform->position.x + e->shape->getRadius() > window.getSize().x || e->transform->position.x - e->shape->getRadius() < 0) {
+				e->transform->velocity.x *= -1; // Simple bounce effect
 			}
 
-			if (e->transform->position.y + e->shape->getRadius() > window.getSize().y ||
-				e->transform->position.y - e->shape->getRadius() < 0) {
-				e->transform->velocity.y *= -1;
+			if (e->transform->position.y + e->shape->getRadius() > window.getSize().y || e->transform->position.y - e->shape->getRadius() < 0) {
+				e->transform->velocity.y *= -1; // Simple bounce effect
 			}
 		}
 	}
+	//Check Collision of Bulelts with Enemies and Player with Enemies
+	for (auto& Enemies : entityManager.GetEntities("Enemy")) {
+		//Player and Enemies Collision
+		if (myplayer->collision && Enemies->collision) {
+			float distance = pow(myplayer->transform->position.x - Enemies->transform->position.x, 2) + pow(myplayer->transform->position.y - Enemies->transform->position.y, 2);
+			int combinedRadius = myplayer->shape->getRadius() + Enemies->shape->getRadius();
+			if (distance <= combinedRadius * combinedRadius) {
+				// Handle player-enemy collision (e.g., end game, reduce life, etc.)
+				std::cout << "Player hit by enemy! Game Over!" << std::endl;
+				Running = false; // End game for simplicity
+			}
+		}
 
-	// Check collision of bullets with enemies and player with enemies
-	for (auto& Bullets : entityManager.GetEntities("Bullet")) {
-		for (auto& Enemies : entityManager.GetEntities("Enemy")) {
+
+		// Bullets and Enemies Collision
+		for (auto& Bullets : entityManager.GetEntities("Bullet")) {
 			if (Bullets->collision && Enemies->collision) {
-				float distance = pow(Bullets->transform->position.x - Enemies->transform->position.x, 2) +
-					pow(Bullets->transform->position.y - Enemies->transform->position.y, 2);
+				float distance = pow(Bullets->transform->position.x - Enemies->transform->position.x, 2) + pow(Bullets->transform->position.y - Enemies->transform->position.y, 2);
 				int combinedRadius = Bullets->collision->radius + Enemies->collision->radius;
 
 				if (distance <= combinedRadius * combinedRadius) {
-					Bullets->Destroy();  // Destroy bullet
-					Enemies->Destroy();  // Destroy enemy
-					score += 10;         // Increase score
-
-					// If enemy is big enough, spawn smaller enemies
-					if (Enemies->shape->getRadius() > enemyConfig.SR / 2) {
+					Bullets->Destroy(); // Destroy bullet
+					Enemies->Destroy(); // Destroy enemy
+					score += 10; // Increase score
+					if (Enemies->shape->getRadius() > enemyConfig.SR / 2) { // If enemy is big enough, spawn smaller enemies
 						spawnSmallEnemy(Enemies);
 					}
 				}
 			}
 		}
 	}
+
 }
 
 void Game::sEnemySpawn() {
@@ -280,6 +360,7 @@ void Game::sMovement() {
 	myplayer->transform->velocity = { 0.0f, 0.0f }; // Reset velocity before applying input
 
 	if (myplayer->input->down && myplayer->transform->position.y + playerConfig.SR < window.getSize().y) {
+		// Prevent moving out of bounds
 		myplayer->transform->velocity.y = playerConfig.V;
 	}
 	else if (myplayer->input->up && myplayer->transform->position.y - playerConfig.SR > 0) {
@@ -293,12 +374,29 @@ void Game::sMovement() {
 		myplayer->transform->velocity.x = -playerConfig.V;
 	}
 
-	// For all entities with a transform component, update their position based on their velocity
+	if (mIsSpecialActive) {
+		int activeDuration = currentFrame - mSpecialStartTime;
+		if (activeDuration < 180) {
+			// 2. Spawn bullets every 10 frames
+			if (activeDuration % 10 == 0) {
+				spawnSpecialWeapon(myplayer);
+			}
+		}
+		else {
+			LastPlayerSpecialWeaponTime = currentFrame; // Reset cooldown timer
+			mIsSpecialActive = false;
+		}
+	}
+
+
+
+	//for all entities with a transform component, update their position based on their velocity except UserInput component
 	for (auto& e : entityManager.GetEntities()) {
 		if (e->transform) {
 			e->transform->position.x += e->transform->velocity.x;
 			e->transform->position.y += e->transform->velocity.y;
 			e->transform->rotation += 3.0f; // Rotate all entities for visual effect
+
 		}
 	}
 }
@@ -310,7 +408,7 @@ void Game::sUserInput() {
 			Running = false;
 		}
 
-		// Keyboard pressed
+		// Handle other events as needed
 		if (event->is<sf::Event::KeyPressed>()) {
 			const auto& keyPress = event->getIf<sf::Event::KeyPressed>();
 			switch (keyPress->code) {
@@ -328,7 +426,12 @@ void Game::sUserInput() {
 				myplayer->input->right = true;
 				break;
 			case sf::Keyboard::Key::Space:
-				myplayer->input->shoot = true;
+				// Only trigger if not already active AND cooldown is over
+				if (!mIsSpecialActive && (currentFrame - LastPlayerSpecialWeaponTime >= 1800)) {
+					mIsSpecialActive = true;
+					mSpecialStartTime = currentFrame;
+					LastPlayerSpecialWeaponTime = currentFrame;
+				}
 				break;
 			default:
 				break;
@@ -353,7 +456,7 @@ void Game::sUserInput() {
 				myplayer->input->right = false;
 				break;
 			case sf::Keyboard::Key::Space:
-				myplayer->input->shoot = false;
+				myplayer->input->special = false;
 				break;
 			default:
 				break;
