@@ -235,38 +235,8 @@ void Game::spawnBullet(std::shared_ptr<Entity> entity, const Vec2& mousepos) {
 }
 
 // ---------------------------------------------------------------------------
-// Main Loop
-// ---------------------------------------------------------------------------
-
-void Game::Run() {
-	window.setFramerateLimit(60);
-	entityManager.Update();
-
-	while (Running) {
-		std::cout << currentFrame << std::endl;
-
-		entityManager.Update();
-		sUserInput();
-
-		if (!Paused) {
-			sEnemySpawn();
-			sMovement();
-			sCollision();
-		}
-
-		sRender();
-		currentFrame++;
-	}
-}
-
-// ---------------------------------------------------------------------------
 // Helper free functions
 // ---------------------------------------------------------------------------
-
-void SetPosition(std::shared_ptr<Entity> entity) {
-	entity->shape->setPosition(entity->transform->position);
-	entity->shape->setRotation(entity->transform->rotation);
-}
 
 void LifeSpanEffect(std::shared_ptr<Entity> entity) {
 	// Fade effect based on remaining lifespan
@@ -278,27 +248,6 @@ void LifeSpanEffect(std::shared_ptr<Entity> entity) {
 // ---------------------------------------------------------------------------
 // Systems
 // ---------------------------------------------------------------------------
-
-void Game::sRender() {
-	window.clear();
-
-	// Render all entities
-	for (auto& e : entityManager.GetEntities()) {
-		if (e->transform && e->shape) {
-			SetPosition(e);
-		}
-
-		window.draw(e->shape->getShape());
-
-		if (e->lifespan) {
-			LifeSpanEffect(e);
-		}
-	}
-
-	Text->setString("Score: " + std::to_string(score));
-	window.draw(*Text);
-	window.display();
-}
 
 void Game::sCollision() {
 	// Simple boundary collision and bounce
