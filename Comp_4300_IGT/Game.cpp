@@ -43,7 +43,7 @@ void Game::spawnPlayer() {
 	std::shared_ptr<Entity> player = entityManager.AddEntity("Player");
 	player->transform = std::make_shared<CTransform>();
 	player->collision = std::make_shared<CCollision>(playerConfig.SR);
-	player->shape = std::make_shared<CShape>(playerConfig.SR,playerConfig.V,sf::Color(playerConfig.FR,playerConfig.FG, playerConfig.FB),sf::Color(playerConfig.OR, 255, playerConfig.OB),playerConfig.OT);
+	player->shape = std::make_shared<CShape>(playerConfig.SR, static_cast<int>(playerConfig.S), sf::Color(playerConfig.FR, playerConfig.FG, playerConfig.FB), sf::Color(playerConfig.OR, playerConfig.OG, playerConfig.OB), playerConfig.OT);
 	player->input = std::make_shared<CInput>();
 	
 	player->transform->position = { 1280.0f/2,720.0f/2 };
