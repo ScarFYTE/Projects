@@ -1,0 +1,156 @@
+[33mcommit 4946af782ecd81f8da45e3105c5cf0d32edbe8ef[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mOrganizing[m[33m, [m[1;31morigin/Organizing[m[33m)[m
+Author: Syed Muhammad Shoaib Shah <231283405+ScarFYTE@users.noreply.github.com>
+Date:   Sat Mar 28 21:19:06 2026 +0500
+
+    Update Comp_4300_IGT/Game.cpp
+    
+    Co-authored-by: Copilot <175728472+Copilot@users.noreply.github.com>
+
+[33mcommit 2d4e304cb7b820afb3e69b9329539fd331bdef92[m
+Author: ScarFYTE <231283405+ScarFYTE@users.noreply.github.com>
+Date:   Sat Mar 28 20:23:01 2026 +0500
+
+    New features added , Death , Special Weapon added , Made the Character Hollow so that its distinguishable from Enemies
+
+[33mcommit cb96c7b037a89d0a7975c59d8a656a2e55424816[m
+Author: ScarFYTE <231283405+ScarFYTE@users.noreply.github.com>
+Date:   Sat Mar 28 16:42:22 2026 +0500
+
+    Added Death , and laid foundation for some other functions
+
+[33mcommit df4da6658cbe8435d5620c70666857e599e38995[m
+Author: ScarFYTE <231283405+ScarFYTE@users.noreply.github.com>
+Date:   Thu Mar 26 17:59:20 2026 +0500
+
+    oh boy lot done today , Added Bullets , Enemies Dying and a Sharpnel effect for them , fixed Bugs with Enemy deaths
+
+[33mcommit 58ae1117c3ed71ea04c9a5a584edee7860a56e49[m
+Author: ScarFYTE <231283405+ScarFYTE@users.noreply.github.com>
+Date:   Wed Mar 25 19:56:07 2026 +0500
+
+    Randomness in shape spawnings and in bound checks , Rotation added for Visual Effects
+
+[33mcommit b774695fa75e472a0eb64252a6fb3c9d5bcaa2c8[m
+Author: ScarFYTE <231283405+ScarFYTE@users.noreply.github.com>
+Date:   Tue Mar 24 23:03:56 2026 +0500
+
+    Oh god so much done in this Commit i aint Explaining none of dat i aint got brain power rn to do dat
+
+[33mcommit d698ac53575f5beec3f9774e0955936979f7d568[m
+Author: ScarFYTE <231283405+ScarFYTE@users.noreply.github.com>
+Date:   Tue Mar 24 16:38:58 2026 +0500
+
+    Adding Collosions Movement And UserInput
+
+[33mcommit 4992369e347d90c96736625b33e6db8b6e1af3a5[m
+Author: ScarFYTE <231283405+ScarFYTE@users.noreply.github.com>
+Date:   Tue Mar 24 16:38:31 2026 +0500
+
+    Nothing Much Changed
+
+[33mcommit 70d531cf4eb2657d30def187d9cc141622f45ead[m
+Author: ScarFYTE <231283405+ScarFYTE@users.noreply.github.com>
+Date:   Tue Mar 24 16:38:08 2026 +0500
+
+    Added Functionality to access Radius
+
+[33mcommit 96d12e22545af5fc14e0e2d287f36418de60e070[m
+Author: ScarFYTE <231283405+ScarFYTE@users.noreply.github.com>
+Date:   Mon Mar 23 19:34:59 2026 +0500
+
+    Started Work on Game funcs
+
+[33mcommit e17346d6cdcfd7ba80ddf430c34b9a8b113335d4[m
+Author: ScarFYTE <231283405+ScarFYTE@users.noreply.github.com>
+Date:   Mon Mar 23 19:34:33 2026 +0500
+
+    Added Entity Manager Functions
+
+[33mcommit 2460f70634da88366627b0cc9110a88973c263b4[m
+Author: ScarFYTE <231283405+ScarFYTE@users.noreply.github.com>
+Date:   Mon Mar 23 18:16:23 2026 +0500
+
+    Added Game run functions
+    (function Definition Remaining)
+
+[33mcommit 0e4e4151e2a17a9977bb96b886b394aeea24fad7[m
+Author: ScarFYTE <231283405+ScarFYTE@users.noreply.github.com>
+Date:   Mon Mar 23 17:06:42 2026 +0500
+
+    Added Header Files for Future Dev
+
+[33mcommit f7bad5ea9f9e5c03e9a1be3a54d79779e0fb4258[m
+Author: ScarFYTE <231283405+ScarFYTE@users.noreply.github.com>
+Date:   Sun Mar 22 19:07:43 2026 +0500
+
+    Moving Towards Logic Building for Geometry War Game
+
+[33mcommit 68a6e480f8baa254d75732bec26708f831c9211b[m
+Merge: c612c7a d81134d
+Author: Syed Muhammad Shoaib Shah <231283405+ScarFYTE@users.noreply.github.com>
+Date:   Thu Mar 19 13:06:23 2026 +0500
+
+    Merge pull request #1 from ScarFYTE/New
+    
+    Shared PTR Used
+
+[33mcommit d81134deaf4aac1ac1acc3d85c0a288d75832fb6[m[33m ([m[1;31morigin/New[m[33m)[m
+Author: ScarFYTE <231283405+ScarFYTE@users.noreply.github.com>
+Date:   Thu Mar 19 13:03:18 2026 +0500
+
+    Shared PTR Used
+
+[33mcommit c612c7aa1584758c5dee7283b57b6324130be316[m
+Author: ScarFYTE <231283405+ScarFYTE@users.noreply.github.com>
+Date:   Thu Mar 19 12:09:02 2026 +0500
+
+    Learned Coordination of the window + Collision with Border
+
+[33mcommit 85a15607bb097a4f67d0ac7856cfcab1f9679311[m
+Author: ScarFYTE <231283405+ScarFYTE@users.noreply.github.com>
+Date:   Wed Mar 18 19:21:16 2026 +0500
+
+    Oh my Lord its working Finally
+
+[33mcommit ff2b8883f8aa92a54d3abadd6db6a53f6b24b2a9[m
+Author: ScarFYTE <231283405+ScarFYTE@users.noreply.github.com>
+Date:   Wed Mar 18 11:08:39 2026 +0500
+
+    IDK whats happening
+
+[33mcommit 4ab972cdc371a5e06bd10949f69a6177a0b40daa[m
+Author: ScarFYTE <231283405+ScarFYTE@users.noreply.github.com>
+Date:   Wed Mar 18 09:53:35 2026 +0500
+
+    Introductory FIles
+
+[33mcommit fa738239dba74926599a2688494e59dc721397a3[m
+Author: ScarFYTE <231283405+ScarFYTE@users.noreply.github.com>
+Date:   Wed Mar 18 09:52:15 2026 +0500
+
+    SS
+
+[33mcommit 6b9a95a6305f918c961d9836b832476f5be4ab42[m
+Merge: 5e894ae 63151a8
+Author: ScarFYTE <231283405+ScarFYTE@users.noreply.github.com>
+Date:   Wed Mar 18 08:55:49 2026 +0500
+
+    Merge branch 'main' of https://github.com/ScarFYTE/Projects
+
+[33mcommit 5e894ae317d17f59b02703cd8e97546bc8b28e5a[m
+Author: ScarFYTE <231283405+ScarFYTE@users.noreply.github.com>
+Date:   Wed Mar 18 08:55:27 2026 +0500
+
+    Trying out Visual Studio
+
+[33mcommit 63151a862c31de24149adbde3571746a832665da[m
+Author: Syed Muhammad Shoaib Shah <231283405+ScarFYTE@users.noreply.github.com>
+Date:   Tue Mar 17 09:34:21 2026 +0500
+
+    Formal Intro Duction
+
+[33mcommit 08667a317eae6f25a840a28e0a50f2ec1443baeb[m
+Author: ScarFYTE <231283405+ScarFYTE@users.noreply.github.com>
+Date:   Tue Mar 17 09:28:32 2026 +0500
+
+    Initial Commit
