@@ -14,8 +14,8 @@ void Game::init(const std::string& config) {
 	//file >> enemyConfig.SR >> enemyConfig.CR >> enemyConfig.OR >> enemyConfig.OG >> enemyConfig.OB >> enemyConfig.OT >> enemyConfig.VMin >> enemyConfig.VMax >> enemyConfig.L >> enemyConfig.SI >> enemyConfig.SMin >> enemyConfig.SMax;
 	//file >> bulletConfig.SR >> bulletConfig.CR >> bulletConfig.FR >> bulletConfig.FG >> bulletConfig.FB >> bulletConfig.OR >> bulletConfig.OG >> bulletConfig.OB >> bulletConfig.OT >> bulletConfig.V >> bulletConfig.L >> bulletConfig.S;
 	//Setting Default Values for Debugging Ai do this plzz
-	playerConfig = { 30.0f, 16.0f, 255, 0, 0, 255, 0, 0, 8, 2.0f };
-	enemyConfig  = { 15.0f, 12.0f, 255, 255, 255, 5, 1, 3, 60, 30, 3, 10 };
+	playerConfig = { 30.0f, 16.0f, 0, 0, 0, 255, 255, 0, 8, 5.0f, 3 };
+	enemyConfig  = { 30.0f, 30.0f, 255, 255, 255, 0, 1, 3, 60, 30, 3, 10 };
 	bulletConfig = { 4.0f, 3.0f, 255, 255, 0, 255, 255, 255, 1, 10, 60, 3.0f };
 }
 
@@ -43,7 +43,7 @@ void Game::spawnPlayer() {
 	std::shared_ptr<Entity> player = entityManager.AddEntity("Player");
 	player->transform = std::make_shared<CTransform>();
 	player->collision = std::make_shared<CCollision>(playerConfig.SR);
-	player->shape = std::make_shared<CShape>(playerConfig.SR,playerConfig.V,sf::Color(playerConfig.FR,playerConfig.FG, playerConfig.FB),sf::Color(playerConfig.OR, playerConfig.OG, playerConfig.OB),playerConfig.OT);
+	player->shape = std::make_shared<CShape>(playerConfig.SR,playerConfig.V,sf::Color(playerConfig.FR,playerConfig.FG, playerConfig.FB),sf::Color(playerConfig.OR, 255, playerConfig.OB),playerConfig.OT);
 	player->input = std::make_shared<CInput>();
 	
 	player->transform->position = { 1280.0f/2,720.0f/2 };
@@ -58,7 +58,6 @@ void Game::Run() {
 	entityManager.Update();
 
 	while (Running) {
-		std::cout << currentFrame << std::endl;
 		entityManager.Update();
 		sUserInput();
 		if (!Paused) {
@@ -75,10 +74,10 @@ void SetPosition(std::shared_ptr<Entity> entity) {
 	entity->shape->setRotation(entity->transform->rotation);
 }
 
-void LifeSpanEffect(std::shared_ptr<Entity> entity) {
+void Game::LifeSpanEffect(std::shared_ptr<Entity> entity) {
 	// Fade Effect based on remaining lifespan
 	sf::Color newColor = entity->shape->getShape().getFillColor();
-	newColor.a = entity->lifespan->remaining * 255.0f / entity->lifespan->total; // Assuming total is the initial lifespan
+	newColor = sf::Color(255*entity->lifespan->remaining , 255 * entity->lifespan->remaining , 255 * entity->lifespan->remaining);
 	entity->shape->getShape().setFillColor(newColor);
 }
 
@@ -101,17 +100,16 @@ void Game::sRender() {
 }
 
 void Game::spawnEnemy() {
-	std::cout << "Enemy Spawned at Frame: " << currentFrame << std::endl;
-	std::cout << entityManager.GetEntities().size() << std::endl;
+	float size = rand() % (int)enemyConfig.SR + enemyConfig.SR/2.5;
     std::shared_ptr<Entity> enemy = entityManager.AddEntity("Enemy");
     enemy->transform = std::make_shared<CTransform>();
-    enemy->collision = std::make_shared<CCollision>(enemyConfig.SR);
+    enemy->collision = std::make_shared<CCollision>(size);
 
     // sides between SMin and SMax
     int sides = enemyConfig.SMin + (rand() %(int) (enemyConfig.SMax - enemyConfig.SMin + 1));
 
     enemy->shape = std::make_shared<CShape>(
-        enemyConfig.SR,
+        size,
         sides,
         // you currently don’t have FR/FG/FB for enemy, so use outline color for fill too
         sf::Color(rand() % enemyConfig.OR, rand() % enemyConfig.OG, rand() % enemyConfig.OB),
@@ -205,8 +203,21 @@ void Game::sCollision() {
 		}
 	}
 	//Check Collision of Bulelts with Enemies and Player with Enemies
-	for (auto& Bullets : entityManager.GetEntities("Bullet")) {
-		for(auto& Enemies : entityManager.GetEntities("Enemy")){
+	for (auto& Enemies : entityManager.GetEntities("Enemy")) {
+		//Player and Enemies Collision
+		if (myplayer->collision && Enemies->collision) {
+			float distance = pow(myplayer->transform->position.x - Enemies->transform->position.x, 2) + pow(myplayer->transform->position.y - Enemies->transform->position.y, 2);
+			int combinedRadius = myplayer->shape->getRadius() + Enemies->shape->getRadius();
+			if (distance <= combinedRadius * combinedRadius) {
+				// Handle player-enemy collision (e.g., end game, reduce life, etc.)
+				std::cout << "Player hit by enemy! Game Over!" << std::endl;
+				Running = false; // End game for simplicity
+			}
+		}
+
+
+		// Bullets and Enemies Collision
+		for(auto& Bullets : entityManager.GetEntities("Bullet")){
 			if(Bullets->collision && Enemies->collision){
 				float distance = pow(Bullets->transform->position.x - Enemies->transform->position.x, 2) + pow(Bullets->transform->position.y - Enemies->transform->position.y, 2);
 				int combinedRadius = Bullets->collision->radius + Enemies->collision->radius;
@@ -221,6 +232,7 @@ void Game::sCollision() {
 			}
 		}
 	}
+
 }
 
 
