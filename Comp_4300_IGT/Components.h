@@ -32,6 +32,7 @@ public:
 	bool left = false;
 	bool right = false;
 	bool shoot = false;
+	bool special = false;
 
 	CInput(){}
 };

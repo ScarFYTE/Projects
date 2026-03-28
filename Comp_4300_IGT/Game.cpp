@@ -51,6 +51,14 @@ void Game::spawnPlayer() {
 
 }
 
+void Game::spawnSpecialWeapon(std::shared_ptr<Entity> entity) {
+	// Implement special weapon spawning logic here
+	int Amount = entity->shape->getPointCount() + 4;// Example: spawn N bullets in a circular patternw
+	for (int i = 0;i < Amount;i++) {
+		spawnBullet(entity, { entity->transform->position.x + cos(sf::degrees(360.0f / Amount * i).asRadians()) * 100, entity->transform->position.y + sin(sf::degrees(360.0f / Amount * i).asRadians()) * 100 });
+	}
+}
+
 
 
 void Game::Run() {
@@ -262,6 +270,13 @@ void Game::sMovement() {
 	else if(myplayer->input->left && myplayer->transform->position.x - playerConfig.SR > 0){
 		myplayer->transform->velocity.x = -playerConfig.V;
 	}
+	if (myplayer->input->special && currentFrame - LastPlayerSpecialWeaponTime >500 ) {
+		if (currentFrame % 5 == 0)
+		spawnSpecialWeapon(myplayer);
+
+		if (currentFrame % 560 == 0)
+			LastPlayerSpecialWeaponTime = currentFrame;
+	}
 
 
 
@@ -303,7 +318,7 @@ void Game::sUserInput() {
 				myplayer->input->right = true;
 				break;
 			case sf::Keyboard::Key::Space:
-				myplayer->input->shoot = true;
+				myplayer->input->special = true;
 				break;
 			}
 		}
@@ -325,7 +340,7 @@ void Game::sUserInput() {
 				myplayer->input->right = false;
 				break;
 			case sf::Keyboard::Key::Space:
-				myplayer->input->shoot = false;
+				//myplayer->input->special = false;
 				break;
 			}
 		}

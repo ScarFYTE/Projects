@@ -21,6 +21,7 @@ class Game {
 	int score = 0;
 	int currentFrame = 0;
 	int LastEnemySpawnTime = 0;
+	int LastPlayerSpecialWeaponTime = 0;
 	bool Paused = false;
 	bool Running = true;
 
