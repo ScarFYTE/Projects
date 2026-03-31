@@ -72,7 +72,24 @@ void Game::spawnSpecialWeapon(std::shared_ptr<Entity> entity) {
 	// Implement special weapon spawning logic here
 	int Amount = entity->shape->getPointCount() + 4;// Example: spawn N bullets in a circular patternw
 	for (int i = 0;i < Amount;i++) {
-		spawnBullet(entity, { entity->transform->position.x + cos(sf::degrees(360.0f / Amount * i).asRadians()) * 100, entity->transform->position.y + sin(sf::degrees(360.0f / Amount * i).asRadians()) * 100 });
+		//spawnBullet(entity, { entity->transform->position.x + cos(sf::degrees(360.0f / Amount * i).asRadians()) * 100, entity->transform->position.y + sin(sf::degrees(360.0f / Amount * i).asRadians()) * 100 });
+		std::shared_ptr<Entity> bullet = entityManager.AddEntity("Bullet");
+		bullet->transform = std::make_shared<CTransform>();
+		bullet->collision = std::make_shared<CCollision>(bulletConfig.SR);
+		bullet->lifespan = std::make_shared<CLifeSpan>(bulletConfig.L);
+		bullet->shape = std::make_shared<CShape>(
+			bulletConfig.SR,
+			myplayer->shape->getPointCount(), // Bullets are same shape as player but smaller
+			sf::Color(255, 125, 128),
+			sf::Color(bulletConfig.OR, bulletConfig.OG, bulletConfig.OB),
+			bulletConfig.OT
+		);
+		bullet->transform->position = entity->transform->position;
+		Vec2 velocity = {
+			cos(sf::degrees(360.0f / Amount * i).asRadians()) * bulletConfig.V,
+			sin(sf::degrees(360.0f / Amount * i).asRadians()) * bulletConfig.V
+		};
+		bullet->transform->velocity = velocity;
 	}
 }
 
