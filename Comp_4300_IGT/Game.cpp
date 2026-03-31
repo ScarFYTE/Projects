@@ -78,7 +78,7 @@ void Game::spawnSpecialWeapon(std::shared_ptr<Entity> entity) {
 		bullet->collision = std::make_shared<CCollision>(bulletConfig.SR);
 		bullet->lifespan = std::make_shared<CLifeSpan>(bulletConfig.L);
 		bullet->shape = std::make_shared<CShape>(
-			bulletConfig.SR,
+			10.0f,
 			myplayer->shape->getPointCount(), // Bullets are same shape as player but smaller
 			sf::Color(255, 125, 128),
 			sf::Color(bulletConfig.OR, bulletConfig.OG, bulletConfig.OB),
@@ -86,8 +86,8 @@ void Game::spawnSpecialWeapon(std::shared_ptr<Entity> entity) {
 		);
 		bullet->transform->position = entity->transform->position;
 		Vec2 velocity = {
-			cos(sf::degrees(360.0f / Amount * i).asRadians()) * bulletConfig.V,
-			sin(sf::degrees(360.0f / Amount * i).asRadians()) * bulletConfig.V
+			cos(sf::degrees(360.0f / Amount * i).asRadians()) * 5.0f,
+			sin(sf::degrees(360.0f / Amount * i).asRadians()) * 5.0f
 		};
 		bullet->transform->velocity = velocity;
 	}
