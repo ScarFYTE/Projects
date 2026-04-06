@@ -26,6 +26,7 @@ class Game {
 	bool Running = true;
 	bool mIsSpecialActive = false;
 	int  mSpecialStartTime = 0;
+	int lives = 3;
 
 	std::shared_ptr<Entity> myplayer;
 
@@ -45,6 +46,7 @@ class Game {
 	void spawnBullet(std::shared_ptr<Entity> entity, const Vec2& mousepos);
 	void spawnSpecialWeapon(std::shared_ptr<Entity> entity);
 	void RespawnPlayer();
+	void SetPosition(std::shared_ptr <Entity> entity);
 
 public:
 	Game(const std::string& config);
