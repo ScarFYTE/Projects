@@ -11,11 +11,7 @@ void EntityManager::Update() {
 	}
 	entitiesToAdd.clear();
 	// Update all active entities
-	for (auto& entity : entities) {
-		if (entity->IsActive()) {
-			// Update logic for the entity can be added here
-		}
-	}
+	
 	for (auto& entity : entities) {
 		if (entity->lifespan) {
 			entity->lifespan->remaining--;

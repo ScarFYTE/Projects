@@ -258,6 +258,9 @@ void Game::sUserInput() {
 					LastPlayerSpecialWeaponTime = currentFrame;
 				}
 				break;
+			case sf::Keyboard::Key::P:
+				SetPaused(!Paused);
+				break;
 			default:
 				break;
 			}
@@ -466,4 +469,8 @@ void Game::spawnBullet(std::shared_ptr<Entity> entity, const Vec2& mousepos) {
 	Vec2 Velocity = { direction.x * bulletConfig.V, direction.y * bulletConfig.V };
 	bullet->transform->position = entity->transform->position;
 	bullet->transform->velocity = Velocity;
+}
+
+void Game::SetPaused(bool paused) {
+	Paused = paused;
 }
