@@ -4,74 +4,54 @@
 
 class CTransform {
 public:
-	Vec2 position = { 0.0,0.0 };
-	Vec2 velocity = { 0.0,0.0 };
-	float rotation = 0.0;
+	Vec2  position  = { 0.0f, 0.0f };
+	Vec2  velocity  = { 0.0f, 0.0f };
+	float rotation  = 0.0f;
+	bool  onGround  = false;
 
-	CTransform() : position(0, 0), rotation(0), velocity(0.0, 0.0) {}
-	CTransform(const Vec2& pos, const Vec2& vec, float rot) : position(pos), rotation(rot), velocity(vec) {}
+	CTransform() : position(0, 0), rotation(0), velocity(0.0f, 0.0f) {}
+	CTransform(const Vec2& pos, const Vec2& vel, float rot)
+		: position(pos), velocity(vel), rotation(rot) {}
 };
 
-class CCollision {
+// Axis-aligned bounding box (half-extents)
+class CBoundingBox {
 public:
-	float radius;
-	CCollision(float r) : radius(r) {}
+	Vec2 halfSize;
+	CBoundingBox(float w, float h) : halfSize(w * 0.5f, h * 0.5f) {}
+	float width()  const { return halfSize.x * 2.0f; }
+	float height() const { return halfSize.y * 2.0f; }
 };
 
-class CScore {
+// Sprite / visual rectangle (supports optional texture)
+class CSprite {
+	sf::RectangleShape rect;
+	sf::Texture        texture;
+
 public:
-	int Score = 0;
-	CScore() : Score(0) {}
-	CScore(int s) : Score(s) {}
+	CSprite(float w, float h, const sf::Color& color) : rect({ w, h }) {
+		rect.setFillColor(color);
+		rect.setOrigin({ w * 0.5f, h * 0.5f });
+	}
+
+	bool loadTexture(const std::string& path) {
+		if (!texture.loadFromFile(path)) { return false; }
+		rect.setTexture(&texture);
+		return true;
+	}
+
+	void setPosition(const Vec2& pos) {
+		rect.setPosition({ pos.x, pos.y });
+	}
+
+	sf::RectangleShape&       getShape()       { return rect; }
+	const sf::RectangleShape& getShape() const { return rect; }
 };
 
 class CInput {
 public:
-	bool up = false;
-	bool down = false;
-	bool left = false;
-	bool right = false;
-	bool shoot = false;
-	bool special = false;
+	bool left    = false;
+	bool right   = false;
 
 	CInput() {}
-};
-
-class CShape {
-	sf::CircleShape circle;
-
-public:
-	CShape(float radius, int points, const sf::Color& fill, const sf::Color& outline, float Thickness) :
-		circle(radius, points)
-	{
-		circle.setFillColor(fill);
-		circle.setOutlineColor(outline);
-		circle.setOutlineThickness(Thickness);
-		circle.setOrigin({ radius, radius });
-	}
-	void setPosition(const Vec2& pos) {
-		circle.setPosition({ pos.x, pos.y });
-	}
-	void setRotation(float rot) {
-		circle.setRotation(sf::degrees(rot));
-	}
-	void setFillColor(const sf::Color& color) {
-		circle.setFillColor(color);
-	}
-	float getRadius() const;
-	sf::CircleShape getShape() const {
-		return circle;
-	}
-
-	int getPointCount() const {
-		return circle.getPointCount();
-	}
-};
-
-class CLifeSpan {
-public:
-	int remaining = 0;
-	int total = 0;
-	CLifeSpan() : remaining(0), total(0) {}
-	CLifeSpan(int Total) : remaining(Total), total(Total) {}
 };

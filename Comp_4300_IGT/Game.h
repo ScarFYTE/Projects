@@ -1,56 +1,48 @@
 #pragma once
-#include"EntityManager.h"
-#include"Entity.h"
-
-#include<SFML/Graphics.hpp>
-
-struct PlayerConfig { float SR, CR;int FR, FG, FB, OR, OG, OB; float V, S, OT; };
-
-struct EnemyConfig { float SR, CR;int OR, OG, OB, OT, VMin, VMax, L, SI, SMin, SMax; };
-struct BulletConfig { float SR, CR;int FR, FG, FB, OR, OG, OB, OT, V, L; float S; };
+#include "EntityManager.h"
+#include "Entity.h"
+#include <SFML/Graphics.hpp>
 
 class Game {
+	// -----------------------------------------------------------------------
+	// Constants
+	// -----------------------------------------------------------------------
+	static constexpr unsigned int WINDOW_WIDTH  = 1280;
+	static constexpr unsigned int WINDOW_HEIGHT = 720;
+	static constexpr float GRAVITY        =  0.5f;
+	static constexpr float MAX_FALL_SPEED =  15.0f;
+	static constexpr float JUMP_VELOCITY  = -13.0f;
+	static constexpr float MOVE_SPEED     =  5.0f;
+	static constexpr float PLAYER_W       =  50.0f;
+	static constexpr float PLAYER_H       =  70.0f;
+	static constexpr float GROUND_H       =  20.0f;
+
+	// -----------------------------------------------------------------------
+	// Members
+	// -----------------------------------------------------------------------
 	sf::RenderWindow window;
-	EntityManager entityManager;
-	sf::Font font;
-	std::unique_ptr<sf::Text> Text;
-	PlayerConfig playerConfig;
-	EnemyConfig enemyConfig;
-	BulletConfig bulletConfig;
+	EntityManager    entityManager;
+	bool Running      = true;
+	int  currentFrame = 0;
 
-	int score = 0;
-	int currentFrame = 0;
-	int LastEnemySpawnTime = 0;
-	int LastPlayerSpecialWeaponTime = -1800;
-	bool Paused = false;
-	bool Running = true;
-	bool mIsSpecialActive = false;
-	int  mSpecialStartTime = 0;
-	int lives = 3;
+	std::shared_ptr<Entity> player1;  // WASD
+	std::shared_ptr<Entity> player2;  // Arrow keys
 
-	std::shared_ptr<Entity> myplayer;
+	// -----------------------------------------------------------------------
+	// Internal helpers
+	// -----------------------------------------------------------------------
+	void init();
+	void spawnGround();
+	void spawnPlayers();
 
-	void init(const std::string& config);
-	void SetPaused(bool Paused);
-
-	void sMovement();
+	// Systems
 	void sUserInput();
-	void sRender();
-	void sEnemySpawn();
+	void sGravity();
+	void sMovement();
 	void sCollision();
-	void sLifespan();
-
-	void spawnPlayer();
-	void spawnEnemy();
-	void spawnSmallEnemy(std::shared_ptr<Entity> entity);
-	void spawnBullet(std::shared_ptr<Entity> entity, const Vec2& mousepos);
-	void spawnSpecialWeapon(std::shared_ptr<Entity> entity);
-	void RespawnPlayer();
-	void SetPosition(std::shared_ptr <Entity> entity);
+	void sRender();
 
 public:
-	Game(const std::string& config);
-
+	Game();
 	void Run();
-
 };
