@@ -18,12 +18,10 @@ class Entity {
 public:
 
 	std::shared_ptr<CTransform> transform;
-	std::shared_ptr<CCollision> collision;   // legacy radius collision
-	std::shared_ptr<CBoundingBox> bbox;      // rectangular bounding box collision
+	std::shared_ptr<CCollision> collision;
 	std::shared_ptr<CScore> score;
 	std::shared_ptr<CInput> input;
-	std::shared_ptr<CShape> shape;           // legacy circle shape
-	std::shared_ptr<CSprite> sprite;         // rect/texture-based visual
+	std::shared_ptr<CShape> shape;
 	std::shared_ptr<CLifeSpan> lifespan;
 
 	void Destroy();
