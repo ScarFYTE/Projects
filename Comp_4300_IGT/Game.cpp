@@ -146,9 +146,9 @@ void Game::sMovement() {
 			tf.onGround   = false;
 		}
 
-		// Fast fall
-		if (inp.down && !tf.onGround && tf.velocity.y > 0.0f) {
-			tf.velocity.y *= GameConfig::FAST_FALL;
+		// Fast fall — apply a one-time downward impulse when the player presses down in the air
+		if (inp.down && !tf.onGround && tf.velocity.y >= 0.0f && tf.velocity.y < GameConfig::PLAYER_SPEED * GameConfig::FAST_FALL) {
+			tf.velocity.y = GameConfig::PLAYER_SPEED * GameConfig::FAST_FALL;
 		}
 
 		// Apply gravity

@@ -82,8 +82,8 @@ public:
 // Sprite/texture-based visual component (uses RectangleShape; swap fill for texture later)
 class CSprite {
 	sf::RectangleShape rect;
-	sf::Texture texture;
-	bool hasTexture = false;
+	// Heap-allocated so the address stays stable if CSprite is moved/copied
+	std::unique_ptr<sf::Texture> texture;
 
 public:
 	CSprite(float w, float h, const sf::Color& fill) {
@@ -94,9 +94,10 @@ public:
 
 	// Load a texture file; if successful the rectangle will display it instead of the fill color.
 	bool loadTexture(const std::string& path) {
-		if (texture.loadFromFile(path)) {
-			rect.setTexture(&texture);
-			hasTexture = true;
+		auto tex = std::make_unique<sf::Texture>();
+		if (tex->loadFromFile(path)) {
+			texture = std::move(tex);
+			rect.setTexture(texture.get());
 			return true;
 		}
 		return false;
