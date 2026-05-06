@@ -4,16 +4,31 @@
 
 #include<SFML/Graphics.hpp>
 
+struct PlayerConfig { float SR, CR;int FR, FG, FB, OR, OG, OB; float V, S, OT; };
+
+struct EnemyConfig { float SR, CR;int OR, OG, OB, OT, VMin, VMax, L, SI, SMin, SMax; };
+struct BulletConfig { float SR, CR;int FR, FG, FB, OR, OG, OB, OT, V, L; float S; };
+
 class Game {
 	sf::RenderWindow window;
 	EntityManager entityManager;
+	sf::Font font;
+	std::unique_ptr<sf::Text> Text;
+	PlayerConfig playerConfig;
+	EnemyConfig enemyConfig;
+	BulletConfig bulletConfig;
 
+	int score = 0;
 	int currentFrame = 0;
+	int LastEnemySpawnTime = 0;
+	int LastPlayerSpecialWeaponTime = -1800;
 	bool Paused = false;
 	bool Running = true;
+	bool mIsSpecialActive = false;
+	int  mSpecialStartTime = 0;
+	int lives = 3;
 
-	std::shared_ptr<Entity> player1;
-	std::shared_ptr<Entity> player2;
+	std::shared_ptr<Entity> myplayer;
 
 	void init(const std::string& config);
 	void SetPaused(bool Paused);
@@ -21,9 +36,17 @@ class Game {
 	void sMovement();
 	void sUserInput();
 	void sRender();
+	void sEnemySpawn();
 	void sCollision();
+	void sLifespan();
 
-	void spawnPlayers();
+	void spawnPlayer();
+	void spawnEnemy();
+	void spawnSmallEnemy(std::shared_ptr<Entity> entity);
+	void spawnBullet(std::shared_ptr<Entity> entity, const Vec2& mousepos);
+	void spawnSpecialWeapon(std::shared_ptr<Entity> entity);
+	void RespawnPlayer();
+	void SetPosition(std::shared_ptr <Entity> entity);
 
 public:
 	Game(const std::string& config);
