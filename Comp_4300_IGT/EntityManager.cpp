@@ -5,21 +5,11 @@
 
 
 void EntityManager::Update() {
-	// Add new entities to the main list
+	// Move newly queued entities into the main list
 	for (auto& entity : entitiesToAdd) {
 		entities.push_back(entity);
 	}
 	entitiesToAdd.clear();
-	// Update all active entities
-	
-	for (auto& entity : entities) {
-		if (entity->lifespan) {
-			entity->lifespan->remaining--;
-			if (entity->lifespan->remaining <= 0) {
-				entity->active = false;
-			}
-		}
-	}
 	RemoveDeadEntities();
 }
 
