@@ -86,20 +86,12 @@ void Game::sUserInput() {
 		if (const auto* kp = event->getIf<sf::Event::KeyPressed>()) {
 			switch (kp->code) {
 			// --- Player 1 (WASD) ---
-			case sf::Keyboard::Key::W:
-				if (player1->transform->onGround) {
-					player1->transform->velocity.y = JUMP_VELOCITY;
-				}
-				break;
+			case sf::Keyboard::Key::W: player1->input->jump  = true; break;
 			case sf::Keyboard::Key::A: player1->input->left  = true; break;
 			case sf::Keyboard::Key::D: player1->input->right = true; break;
 
 			// --- Player 2 (Arrow keys) ---
-			case sf::Keyboard::Key::Up:
-				if (player2->transform->onGround) {
-					player2->transform->velocity.y = JUMP_VELOCITY;
-				}
-				break;
+			case sf::Keyboard::Key::Up: player2->input->jump	 = true; break;
 			case sf::Keyboard::Key::Left:  player2->input->left  = true; break;
 			case sf::Keyboard::Key::Right: player2->input->right = true; break;
 
@@ -114,7 +106,7 @@ void Game::sUserInput() {
 			case sf::Keyboard::Key::W: player1->input->jump  = false; break;
 			case sf::Keyboard::Key::Left:  player2->input->left  = false; break;
 			case sf::Keyboard::Key::Right: player2->input->right = false; break;
-			case sf::Keyboard::Key::Up: player1->input->jump	 = false; break;
+			case sf::Keyboard::Key::Up: player2->input->jump	 = false; break;
 			
 			default: break;
 			}
@@ -126,9 +118,7 @@ void Game::sGravity() {
 	for (auto& e : entityManager.GetEntities("Player")) {
 		if (!e->transform) { continue; }
 
-		// Reset ground flag every frame; sCollision will re-set it if still grounded
-		e->transform->onGround = false;
-
+		
 		e->transform->velocity.y += GRAVITY;
 		if (e->transform->velocity.y > MAX_FALL_SPEED) {
 			e->transform->velocity.y = MAX_FALL_SPEED;
@@ -144,7 +134,7 @@ void Game::sMovement() {
 		e->transform->velocity.x = 0.0f;
 		if (e->input->left)  { e->transform->velocity.x = -MOVE_SPEED; }
 		if (e->input->right) { e->transform->velocity.x =  MOVE_SPEED; }
-		if (e->input->jump) { e->transform->velocity.y = JUMP_VELOCITY; }
+		if (e->input->jump && e->transform->onGround) { e->transform->velocity.y = JUMP_VELOCITY; e->transform->onGround = false; }
 		e->transform->position.x += e->transform->velocity.x;
 		e->transform->position.y += e->transform->velocity.y;
 	}
