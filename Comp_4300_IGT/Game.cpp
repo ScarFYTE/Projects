@@ -1,7 +1,7 @@
 #include "Game.h"
 #include <optional>
 #include <SFML/Graphics.hpp>
-
+#include <fstream>
 // ---------------------------------------------------------------------------
 // Construction / Initialization
 // ---------------------------------------------------------------------------
@@ -11,12 +11,29 @@ Game::Game() {
 }
 
 void Game::init() {
+	loadConfig("config.txt");
 	window.create(sf::VideoMode({ WINDOW_WIDTH, WINDOW_HEIGHT }), "2D Platformer - 2 Player");
 	window.setFramerateLimit(60);
 	spawnGround();
 	spawnPlayers();
 	// Flush the spawn queue before the first frame
 	entityManager.Update();
+}
+
+// Load Config
+void Game::loadConfig(const std::string& path) {
+	std::ifstream file(path);
+	std::string type;
+	while (file >> type) {
+		if (type == "Tile") {
+			float x, y, w, h;
+			file >> x >> y >> w >> h;
+			auto tile = entityManager.AddEntity("Tile");
+			tile->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
+			tile->boundingBox = std::make_shared<CBoundingBox>(w, h);
+			tile->sprite = std::make_shared<CSprite>(w, h, sf::Color(255, 80, 60));
+		}
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -173,6 +190,79 @@ void Game::sCollision() {
 		if (e->transform->position.x + hw > wf) {
 			e->transform->position.x = wf - hw;
 			e->transform->velocity.x = 0.0f;
+		}
+
+		//Tiles
+		for (auto& Tile : entityManager.GetEntities("Tile")) {
+			if(!Tile->transform || !Tile->boundingBox){ continue; }
+			const float tileHW = Tile->boundingBox->halfSize.x;
+			const float tileHH = Tile->boundingBox->halfSize.y;
+			const float tileX  = Tile->transform->position.x;
+			const float tileY  = Tile->transform->position.y;
+
+			if (std::abs(e->transform->position.x - tileX) < hw + tileHW &&
+				std::abs(e->transform->position.y - tileY) < hh + tileHH) {
+				// Simple collision push the player out of the tile
+				float overlapX = (hw + tileHW) - std::abs(e->transform->position.x - tileX);
+				float overlapY = (hh + tileHH) - std::abs(e->transform->position.y - tileY);
+				if (overlapX < overlapY) {
+					// horizontal collision
+					if (e->transform->position.x < tileX) {
+						e->transform->position.x -= overlapX;
+					} else {
+						e->transform->position.x += overlapX;
+					}
+					e->transform->velocity.x = 0.0f;
+				} else {
+					// vertical collision
+					if (e->transform->position.y < tileY) {
+						e->transform->position.y -= overlapY;
+						e->transform->onGround = true; // Player is on top of the tile
+					} else {
+						e->transform->position.y += overlapY;
+					}
+					e->transform->velocity.y = 0.0f;
+				}
+			}
+		}
+		for (auto& Other : entityManager.GetEntities("Player")) {
+			if (Other == e || !Other->transform || !Other->boundingBox) { continue; }
+			const float otherHW = Other->boundingBox->halfSize.x;
+			const float otherHH = Other->boundingBox->halfSize.y;
+			const float otherX = Other->transform->position.x;
+			const float otherY = Other->transform->position.y;
+			if (std::abs(e->transform->position.x - otherX) < hw + otherHW &&
+				std::abs(e->transform->position.y - otherY) < hh + otherHH) {
+
+				float overlapX = (hw + otherHW) - std::abs(e->transform->position.x - otherX);
+				float overlapY = (hh + otherHH) - std::abs(e->transform->position.y - otherY);
+				if (overlapX < overlapY) {
+					// horizontal collision
+					if (e->transform->position.x < otherX) {
+						e->transform->position.x -= overlapX * 0.5f;
+						Other->transform->position.x += overlapX * 0.5f;
+					}
+					else {
+						e->transform->position.x += overlapX * 0.5f;
+						Other->transform->position.x -= overlapX * 0.5f;
+					}
+					e->transform->velocity.x = 0.0f;
+					Other->transform->velocity.x = 0.0f;
+				}
+				else {
+					// vertical collision
+					if (e->transform->position.y < otherY) {
+						e->transform->position.y -= overlapY ;\
+						e->transform->onGround = true; // Player is on top of the other player
+						e->transform->velocity -= Other->transform->velocity/2;
+					}
+					else {
+						Other->transform->position.y -= overlapY ;
+						Other->transform->onGround = true;// Other is on top of the player
+						Other->transform->velocity -= e->transform->velocity/2;
+					}
+				}
+			}
 		}
 	}
 }

@@ -32,6 +32,7 @@ class Game {
 	// Internal helpers
 	// -----------------------------------------------------------------------
 	void init();
+	void loadConfig(const std::string& path);
 	void spawnGround();
 	void spawnPlayers();
 
@@ -43,6 +44,8 @@ class Game {
 	void sRender();
 
 public:
+
+
 	Game();
 	void Run();
 };
