@@ -13,10 +13,8 @@ Game::Game() {
 void Game::init() {
 	window.create(sf::VideoMode({ WINDOW_WIDTH, WINDOW_HEIGHT }), "2D Platformer - 2 Player");
 	window.setFramerateLimit(60);
-
 	spawnGround();
 	spawnPlayers();
-
 	// Flush the spawn queue before the first frame
 	entityManager.Update();
 }
@@ -91,7 +89,6 @@ void Game::sUserInput() {
 			case sf::Keyboard::Key::W:
 				if (player1->transform->onGround) {
 					player1->transform->velocity.y = JUMP_VELOCITY;
-					player1->transform->onGround   = false;
 				}
 				break;
 			case sf::Keyboard::Key::A: player1->input->left  = true; break;
@@ -101,7 +98,6 @@ void Game::sUserInput() {
 			case sf::Keyboard::Key::Up:
 				if (player2->transform->onGround) {
 					player2->transform->velocity.y = JUMP_VELOCITY;
-					player2->transform->onGround   = false;
 				}
 				break;
 			case sf::Keyboard::Key::Left:  player2->input->left  = true; break;
@@ -115,8 +111,11 @@ void Game::sUserInput() {
 			switch (kr->code) {
 			case sf::Keyboard::Key::A: player1->input->left  = false; break;
 			case sf::Keyboard::Key::D: player1->input->right = false; break;
+			case sf::Keyboard::Key::W: player1->input->jump  = false; break;
 			case sf::Keyboard::Key::Left:  player2->input->left  = false; break;
 			case sf::Keyboard::Key::Right: player2->input->right = false; break;
+			case sf::Keyboard::Key::Up: player1->input->jump	 = false; break;
+			
 			default: break;
 			}
 		}
@@ -145,7 +144,7 @@ void Game::sMovement() {
 		e->transform->velocity.x = 0.0f;
 		if (e->input->left)  { e->transform->velocity.x = -MOVE_SPEED; }
 		if (e->input->right) { e->transform->velocity.x =  MOVE_SPEED; }
-
+		if (e->input->jump) { e->transform->velocity.y = JUMP_VELOCITY; }
 		e->transform->position.x += e->transform->velocity.x;
 		e->transform->position.y += e->transform->velocity.y;
 	}
@@ -200,4 +199,3 @@ void Game::sRender() {
 
 	window.display();
 }
-

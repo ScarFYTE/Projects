@@ -14,7 +14,7 @@ class Game {
 	static constexpr float JUMP_VELOCITY  = -13.0f;
 	static constexpr float MOVE_SPEED     =  5.0f;
 	static constexpr float PLAYER_W       =  50.0f;
-	static constexpr float PLAYER_H       =  70.0f;
+	static constexpr float PLAYER_H       =  50.0f;
 	static constexpr float GROUND_H       =  20.0f;
 
 	// -----------------------------------------------------------------------

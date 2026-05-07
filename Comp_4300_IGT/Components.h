@@ -52,6 +52,6 @@ class CInput {
 public:
 	bool left    = false;
 	bool right   = false;
-
+	bool jump	 = false;
 	CInput() {}
 };
