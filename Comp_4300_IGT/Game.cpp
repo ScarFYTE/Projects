@@ -2,9 +2,7 @@
 #include <optional>
 #include <SFML/Graphics.hpp>
 #include <fstream>
-// ---------------------------------------------------------------------------
 // Construction / Initialization
-// ---------------------------------------------------------------------------
 
 Game::Game() {
 	init();
@@ -12,13 +10,15 @@ Game::Game() {
 
 void Game::init() {
 	loadConfig("config.txt");
+	font.openFromFile("Floraison des Amours.ttf");
 	window.create(sf::VideoMode({ WINDOW_WIDTH, WINDOW_HEIGHT }), "2D Platformer - 2 Player");
 	window.setFramerateLimit(60);
-	spawnGround();
 	spawnPlayers();
 	// Flush the spawn queue before the first frame
 	entityManager.Update();
+	gameView = window.getDefaultView();
 }
+
 
 // Load Config
 void Game::loadConfig(const std::string& path) {
@@ -38,7 +38,7 @@ void Game::loadConfig(const std::string& path) {
 
 // ---------------------------------------------------------------------------
 // Spawners
-// ---------------------------------------------------------------------------
+// -------------------------------------------------------------------------
 
 void Game::spawnGround() {
 	auto ground = entityManager.AddEntity("Ground");
@@ -63,6 +63,7 @@ void Game::spawnPlayers() {
 	player1->boundingBox = std::make_shared<CBoundingBox>(PLAYER_W, PLAYER_H);
 	player1->sprite      = std::make_shared<CSprite>(PLAYER_W, PLAYER_H, sf::Color(50, 100, 200));
 	player1->input       = std::make_shared<CInput>();
+	player1->health		 = std::make_shared<CHealth>();
 
 	// --- Player 2 (Arrow keys) --- red box, right side
 	player2 = entityManager.AddEntity("Player");
@@ -71,11 +72,10 @@ void Game::spawnPlayers() {
 	player2->boundingBox = std::make_shared<CBoundingBox>(PLAYER_W, PLAYER_H);
 	player2->sprite      = std::make_shared<CSprite>(PLAYER_W, PLAYER_H, sf::Color(200, 50, 50));
 	player2->input       = std::make_shared<CInput>();
+	player2->health		 = std::make_shared<CHealth>();
 }
 
-// ---------------------------------------------------------------------------
 // Main loop
-// ---------------------------------------------------------------------------
 
 void Game::Run() {
 	while (Running) {
@@ -84,14 +84,35 @@ void Game::Run() {
 		sGravity();
 		sMovement();
 		sCollision();
+		sCamera();
 		sRender();
 		currentFrame++;
 	}
 }
 
-// ---------------------------------------------------------------------------
 // Systems
-// ---------------------------------------------------------------------------
+void Game::sCamera() {
+	if (!player1->transform || !player2->transform) { return; }
+
+	Vec2 p1 = player1->transform->position;
+	Vec2 p2 = player2->transform->position;
+
+	// Midpoint between both players
+	float cx = (p1.x + p2.x) / 2.0f;
+	float cy = (p1.y + p2.y) / 2.0f;
+	gameView.setCenter({ cx, cy });
+
+	// Distance between players — zoom out to fit both + padding
+	float dist = std::sqrt((p2.x - p1.x) * (p2.x - p1.x) +
+		(p2.y - p1.y) * (p2.y - p1.y));
+	float minSize = static_cast<float>(WINDOW_WIDTH);          // never zoom in past default
+	float needed = std::max(minSize, dist * 1.6f);            
+	float viewW = needed;
+	float viewH = needed * (static_cast<float>(WINDOW_HEIGHT) / WINDOW_WIDTH);
+
+	gameView.setSize({ viewW, viewH });
+	window.setView(gameView);
+}
 
 void Game::sUserInput() {
 	while (const std::optional<sf::Event> event = window.pollEvent()) {
@@ -102,12 +123,10 @@ void Game::sUserInput() {
 
 		if (const auto* kp = event->getIf<sf::Event::KeyPressed>()) {
 			switch (kp->code) {
-			// --- Player 1 (WASD) ---
 			case sf::Keyboard::Key::W: player1->input->jump  = true; break;
 			case sf::Keyboard::Key::A: player1->input->left  = true; break;
 			case sf::Keyboard::Key::D: player1->input->right = true; break;
 
-			// --- Player 2 (Arrow keys) ---
 			case sf::Keyboard::Key::Up: player2->input->jump	 = true; break;
 			case sf::Keyboard::Key::Left:  player2->input->left  = true; break;
 			case sf::Keyboard::Key::Right: player2->input->right = true; break;
@@ -166,13 +185,6 @@ void Game::sCollision() {
 
 		const float hw = e->boundingBox->halfSize.x;
 		const float hh = e->boundingBox->halfSize.y;
-
-		// Floor
-		if (e->transform->position.y + hh >= groundTop) {
-			e->transform->position.y = groundTop - hh;
-			e->transform->velocity.y = 0.0f;
-			e->transform->onGround   = true;
-		}
 
 		// Ceiling
 		if (e->transform->position.y - hh < 0.0f) {
@@ -266,9 +278,73 @@ void Game::sCollision() {
 		}
 	}
 }
+void Game::KillPlayer(std::shared_ptr<Entity> e) {
+	auto& h = e->health;
+
+	h->lives--;
+	h->isDead = true;
+	h->respawnTimer = 180;  // 3 seconds at 60fps
+
+	// Hide the player during respawn
+	e->transform->velocity = { 0.0f, 0.0f };
+	e->transform->position = { -9999.0f, -9999.0f }; // off screen
+	e->GetBoundingBoxCopy(); // Save current bounding box before disabling
+	e->boundingBox = nullptr;                 // disable collision
+
+	//spawnDustParticles(e->transform->position, 12);   
+
+	// Check game over
+	if (h->lives <= 0) {
+		// TODO: trigger game over state
+	}
+}
+
+void Game::RespawnPlayer(std::shared_ptr<Entity> e) {
+	auto& h = e->health;
+
+	h->isDead = false;
+	h->respawnTimer = 0;
+
+	// Restore position and collision
+	e->transform->position = h->spawnPoint;
+	e->transform->velocity = { 0.0f, 0.0f };
+	e->boundingBox = std::make_shared<CBoundingBox>(e->GetBoundingBoxCopy()); // retrieve Real bounding box from before death
+
+	//spawnDustParticles(h->spawnPoint, 8);  // spawn puff
+}
+
+void Game::RenderHud() {
+
+	sf::Text p1Text(font), p2Text(font);
+
+	p1Text.setCharacterSize(20);
+	p2Text.setCharacterSize(20);
+	p1Text.setFillColor(sf::Color::Cyan);
+	p2Text.setFillColor(sf::Color::Red);
+
+	// Build lives string: "P1: ♥ ♥ ♥"
+	std::string p1Lives = "P1: ";
+	for (int i = 0; i < player1->health->lives; i++) { p1Lives += "<3 "; }
+	if (player1->health->isRespawning()) {
+		p1Lives += " (respawning " + std::to_string(player1->health->respawnTimer / 60 + 1) + "s)";
+	}
+
+	std::string p2Lives = "P2: ";
+	for (int i = 0; i < player2->health->lives; i++) { p2Lives += "<3 ";}
+
+	p1Text.setString(p1Lives);
+	p2Text.setString(p2Lives);
+
+	p1Text.setPosition({ 20.0f,  20.0f });
+	p2Text.setPosition({ 20.0f,  50.0f });
+
+	window.draw(p1Text);
+	window.draw(p2Text);
+}
 
 void Game::sRender() {
 	window.clear(sf::Color(30, 30, 50));
+	window.setView(gameView);
 
 	for (auto& e : entityManager.GetEntities()) {
 		if (e->transform && e->sprite) {
@@ -277,5 +353,7 @@ void Game::sRender() {
 		}
 	}
 
+	window.setView(window.getDefaultView());
+	RenderHud();
 	window.display();
 }

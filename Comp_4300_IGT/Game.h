@@ -21,9 +21,13 @@ class Game {
 	// Members
 	// -----------------------------------------------------------------------
 	sf::RenderWindow window;
+	sf::Font font;
 	EntityManager    entityManager;
 	bool Running      = true;
 	int  currentFrame = 0;
+
+	sf::View gameView;
+	float baseZoom = 1.0f;
 
 	std::shared_ptr<Entity> player1;  // WASD
 	std::shared_ptr<Entity> player2;  // Arrow keys
@@ -35,13 +39,17 @@ class Game {
 	void loadConfig(const std::string& path);
 	void spawnGround();
 	void spawnPlayers();
-
+	void spawnDustParticles(Vec2 position, int count = 6);
+	void RenderHud();
+	void KillPlayer(std::shared_ptr<Entity> player);
+	void RespawnPlayer(std::shared_ptr<Entity> player);
 	// Systems
 	void sUserInput();
 	void sGravity();
 	void sMovement();
 	void sCollision();
 	void sRender();
+	void sCamera();
 
 public:
 

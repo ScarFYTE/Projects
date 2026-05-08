@@ -9,6 +9,9 @@ public:
 	float rotation  = 0.0f;
 	bool  onGround  = false;
 
+	int coyoteFrames = 0; // Frames left to allow jump after leaving ground
+	int JumpBufferFrames = 0; // Frames left to allow jump after leaving ground
+
 	CTransform() : position(0, 0), rotation(0), velocity(0.0f, 0.0f) {}
 	CTransform(const Vec2& pos, const Vec2& vel, float rot)
 		: position(pos), velocity(vel), rotation(rot) {}
@@ -21,6 +24,19 @@ public:
 	CBoundingBox(float w, float h) : halfSize(w * 0.5f, h * 0.5f) {}
 	float width()  const { return halfSize.x * 2.0f; }
 	float height() const { return halfSize.y * 2.0f; }
+};
+
+class CParticle {
+public:
+	float lifetime;    // total lifespan in frames
+	float age = 0.0f;  // how old it is
+	sf::Color color;
+
+	CParticle(float lifetime, sf::Color color)
+		: lifetime(lifetime), color(color) {
+	}
+
+	float alpha() const { return 1.0f - (age / lifetime); } // Fade
 };
 
 // Sprite / visual rectangle (supports optional texture)
@@ -54,4 +70,20 @@ public:
 	bool right   = false;
 	bool jump	 = false;
 	CInput() {}
+};
+
+class CHealth {
+public:
+	int   maxLives;
+	int   lives;
+	bool  isDead = false;
+	int   respawnTimer = 0;     // counts down in frames
+	Vec2  spawnPoint;          
+
+	CHealth(int lives, Vec2 spawnPoint)
+		: maxLives(lives), lives(lives), spawnPoint(spawnPoint) {
+	}
+	CHealth() :maxLives(5), lives(5), spawnPoint(250, 250) {}
+
+	bool isRespawning() const { return isDead && respawnTimer > 0; }
 };
