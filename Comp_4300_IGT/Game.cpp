@@ -2,6 +2,7 @@
 #include <optional>
 #include <SFML/Graphics.hpp>
 #include <fstream>
+#include <iostream>
 // Construction / Initialization
 
 Game::Game() {
@@ -10,7 +11,12 @@ Game::Game() {
 
 void Game::init() {
 	loadConfig("config.txt");
-	font.openFromFile("Floraison des Amours.ttf");
+
+	if (font.openFromFile("Fonts/Coolvetica Rg.otf")) {
+		std::cout << "Font loed successfully." << std::endl;
+	} else {
+		std::cerr << "Failed to load font ##########." << std::endl;
+	}
 	window.create(sf::VideoMode({ WINDOW_WIDTH, WINDOW_HEIGHT }), "2D Platformer - 2 Player");
 	window.setFramerateLimit(60);
 	spawnPlayers();
@@ -31,7 +37,7 @@ void Game::loadConfig(const std::string& path) {
 			auto tile = entityManager.AddEntity("Tile");
 			tile->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
 			tile->boundingBox = std::make_shared<CBoundingBox>(w, h);
-			tile->sprite = std::make_shared<CSprite>(w, h, sf::Color(255, 80, 60));
+			tile->sprite = std::make_shared<CSprite>(w, h, sf::Color(100, 80, 60));
 		}
 	}
 }
@@ -152,10 +158,20 @@ void Game::sGravity() {
 	for (auto& e : entityManager.GetEntities("Player")) {
 		if (!e->transform) { continue; }
 
-		
-		e->transform->velocity.y += GRAVITY;
-		if (e->transform->velocity.y > MAX_FALL_SPEED) {
-			e->transform->velocity.y = MAX_FALL_SPEED;
+		auto& t = e->transform;
+
+		if (t->coyoteFrames > 0) t->coyoteFrames--;
+
+		bool wasOnGround = t->onGround;
+
+		t->onGround = false; 
+		if (wasOnGround && !t->onGround && t->velocity.y >= 0.0f) {
+			t->coyoteFrames = 8;  // 8 frames of window to still allow jump after leaving ground
+		}
+
+		t->velocity.y += GRAVITY;
+		if (t->velocity.y > MAX_FALL_SPEED) {
+			t->velocity.y = MAX_FALL_SPEED;
 		}
 	}
 }
@@ -168,7 +184,15 @@ void Game::sMovement() {
 		e->transform->velocity.x = 0.0f;
 		if (e->input->left)  { e->transform->velocity.x = -MOVE_SPEED; }
 		if (e->input->right) { e->transform->velocity.x =  MOVE_SPEED; }
-		if (e->input->jump && e->transform->onGround) { e->transform->velocity.y = JUMP_VELOCITY; e->transform->onGround = false; }
+
+		// Jumping
+		if (e->input->jump && (e->transform->onGround || e->transform->coyoteFrames > 0 || e->transform->JumpBufferFrames > 0)) {
+			e->transform->velocity.y = JUMP_VELOCITY;
+			e->transform->onGround = false;
+			e->transform->coyoteFrames = 0;
+			e->transform->JumpBufferFrames = 0;
+		}
+
 		e->transform->position.x += e->transform->velocity.x;
 		e->transform->position.y += e->transform->velocity.y;
 	}
@@ -268,7 +292,7 @@ void Game::sCollision() {
 					}
 					else {
 						Other->transform->position.y -= overlapY ;
-						Other->transform->onGround = true;// Other is on top of the player
+						Other->transform->onGround = true;// Other is on top of the s
 						Other->transform->velocity -= e->transform->velocity/2;
 					}
 				}
@@ -314,11 +338,11 @@ void Game::RespawnPlayer(std::shared_ptr<Entity> e) {
 void Game::RenderHud() {
 
 	sf::Text p1Text(font), p2Text(font);
-	p1Text.setCharacterSize(200);
-	p2Text.setCharacterSize(200);
+	p1Text.setCharacterSize(24);
+	p2Text.setCharacterSize(24);
 
 	p1Text.setFillColor(sf::Color::Cyan);
-	p2Text.setFillColor(sf::Color::Red);
+	p2Text.setFillColor(sf::Color::White);
 
 	// Build lives string: "P1: ♥ ♥ ♥"
 	std::string p1Lives = "P1: ";
@@ -333,7 +357,7 @@ void Game::RenderHud() {
 	p1Text.setString(p1Lives);
 	p2Text.setString(p2Lives);
 
-	p1Text.setPosition({ 20.0f,  20.0f });
+	p1Text.setPosition({ 20.f,  20.f });
 	p2Text.setPosition({ 20.0f,  50.0f });
 
 	window.draw(p1Text);
