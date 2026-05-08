@@ -286,7 +286,7 @@ void Game::KillPlayer(std::shared_ptr<Entity> e) {
 	// Hide the player during respawn
 	e->transform->velocity = { 0.0f, 0.0f };
 	e->transform->position = { -9999.0f, -9999.0f }; // off screen
-	e->GetBoundingBoxCopy(); // Save current bounding box before disabling
+	e->SaveBoundingbox(); // Save current bounding box before disabling
 	e->boundingBox = nullptr;                 // disable collision
 
 	//spawnDustParticles(e->transform->position, 12);   

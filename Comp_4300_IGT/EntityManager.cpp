@@ -24,20 +24,15 @@ std::shared_ptr<Entity>& EntityManager::AddEntity(const std::string& tag) {
 }
 
 void EntityManager::RemoveDeadEntities() {
-	for (auto& e : entities) {
-		if (e && !e->IsActive()) {
-			tagMap.erase(e->GetTag());
-		}
+	for (auto& [tag,vec] : tagMap) {
+		vec.erase(std::remove_if(vec.begin(), vec.end(),
+			[](const std::shared_ptr<Entity>& e) { return !e->IsActive()||!e; }),
+			vec.end());
 	}
 
-	for (auto it = entities.begin(); it != entities.end(); /* no increment here */) {
-		if (!*it || !(*it)->IsActive()) {
-			it = entities.erase(it); // erase returns the next valid iterator
-		}
-		else {
-			++it;
-		}
-	}
+	entities.erase(std::remove_if(entities.begin(), entities.end(),
+		[](const std::shared_ptr<Entity>& e) { return !e->IsActive() || !e; }),
+		entities.end());
 }
 
 const std::vector<std::shared_ptr<Entity>>& EntityManager::GetEntities() const {
