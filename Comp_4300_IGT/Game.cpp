@@ -3,6 +3,7 @@
 #include <SFML/Graphics.hpp>
 #include <fstream>
 #include <iostream>
+#include <cstdint>
 // Construction / Initialization
 
 Game::Game() {
@@ -45,6 +46,18 @@ void Game::loadConfig(const std::string& path) {
 // ---------------------------------------------------------------------------
 // Spawners
 // -------------------------------------------------------------------------
+void Game::spawnDustParticles(Vec2 position, int count) {
+	for (int i = 0; i < count; i++) {
+		auto p = entityManager.AddEntity("Particle");
+
+		float vx = ((rand() % 300) - 150) / 100.0f;  // -1.5 to +1.5
+		float vy = -((rand() % 200) + 50) / 100.0f; // -0.5 to -2.5 upward
+
+		p->transform = std::make_shared<CTransform>(position, Vec2(vx, vy), 0.0f);
+		p->sprite = std::make_shared<CSprite>(4.0f, 4.0f, sf::Color(200, 170, 120));
+		p->particle = std::make_shared<CParticle>(20.0f, sf::Color(200, 170, 120));
+	}
+}
 
 void Game::spawnGround() {
 	auto ground = entityManager.AddEntity("Ground");
@@ -191,6 +204,8 @@ void Game::sMovement() {
 			e->transform->onGround = false;
 			e->transform->coyoteFrames = 0;
 			e->transform->JumpBufferFrames = 0;
+
+			spawnDustParticles(Vec2(e->transform->position.x, e->transform->position.y + e->boundingBox->halfSize.y), 12);
 		}
 
 		e->transform->position.x += e->transform->velocity.x;
@@ -251,8 +266,16 @@ void Game::sCollision() {
 					// vertical collision
 					if (e->transform->position.y < tileY) {
 						e->transform->position.y -= overlapY;
-						e->transform->onGround = true; // Player is on top of the tile
-					} else {
+
+						// Only spawn dust if actually falling onto tile (not bonking head)
+						if (!e->transform->onGround && e->transform->velocity.y > 1.0f) {
+							spawnDustParticles(Vec2(e->transform->position.x,
+								e->transform->position.y + e->boundingBox->halfSize.y), 6);
+						}
+
+						e->transform->onGround = true;
+					}
+					else {
 						e->transform->position.y += overlapY;
 					}
 					e->transform->velocity.y = 0.0f;
@@ -300,6 +323,33 @@ void Game::sCollision() {
 		}
 	}
 }
+void Game::sParticle() {
+	for (auto& e : entityManager.GetEntities("Particle")) {
+		if (!e->particle || !e->transform || !e->sprite) { continue; }
+
+		auto& p = e->particle;
+		auto& t = e->transform;
+
+		p->age += 1.0f;
+
+		if (p->age >= p->lifetime) {
+			e->Destroy();
+			continue;
+		}
+
+		// Light gravity — floatier than players
+		t->velocity.y += 0.08f;
+		t->position.x += t->velocity.x;
+		t->position.y += t->velocity.y;
+
+		// Fade out
+		sf::Color c = p->color;
+		c.a = static_cast<std::uint8_t>(p->alpha() * 255);
+		e->sprite->getShape().setFillColor(c);
+	}
+}
+
+
 void Game::KillPlayer(std::shared_ptr<Entity> e) {
 	auto& h = e->health;
 
@@ -374,6 +424,7 @@ void Game::sRender() {
 			window.draw(e->sprite->getShape());
 		}
 	}
+	sParticle(); // Update and render particles after all entities so they appear on top
 
 	window.setView(window.getDefaultView());
 	RenderHud();

@@ -52,6 +52,7 @@ class Game {
 	void sCollision();
 	void sRender();
 	void sCamera();
+	void sParticle();
 
 public:
 
