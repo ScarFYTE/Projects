@@ -58,8 +58,7 @@ void Game::spawnPlayers() {
 
 	// --- Player 1 (WASD) --- blue box, left side
 	player1 = entityManager.AddEntity("Player");
-	player1->transform   = std::make_shared<CTransform>(
-		Vec2(WINDOW_WIDTH * 0.25f, spawnY), Vec2(0.0f, 0.0f), 0.0f);
+	player1->transform   = std::make_shared<CTransform>(P1_SPAWN, Vec2(0.0f, 0.0f), 0.0f);
 	player1->boundingBox = std::make_shared<CBoundingBox>(PLAYER_W, PLAYER_H);
 	player1->sprite      = std::make_shared<CSprite>(PLAYER_W, PLAYER_H, sf::Color(50, 100, 200));
 	player1->input       = std::make_shared<CInput>();
@@ -67,8 +66,7 @@ void Game::spawnPlayers() {
 
 	// --- Player 2 (Arrow keys) --- red box, right side
 	player2 = entityManager.AddEntity("Player");
-	player2->transform   = std::make_shared<CTransform>(
-		Vec2(WINDOW_WIDTH * 0.75f, spawnY), Vec2(0.0f, 0.0f), 0.0f);
+	player2->transform   = std::make_shared<CTransform>(P2_SPAWN, Vec2(0.0f, 0.0f), 0.0f);
 	player2->boundingBox = std::make_shared<CBoundingBox>(PLAYER_W, PLAYER_H);
 	player2->sprite      = std::make_shared<CSprite>(PLAYER_W, PLAYER_H, sf::Color(200, 50, 50));
 	player2->input       = std::make_shared<CInput>();
@@ -316,9 +314,9 @@ void Game::RespawnPlayer(std::shared_ptr<Entity> e) {
 void Game::RenderHud() {
 
 	sf::Text p1Text(font), p2Text(font);
+	p1Text.setCharacterSize(200);
+	p2Text.setCharacterSize(200);
 
-	p1Text.setCharacterSize(20);
-	p2Text.setCharacterSize(20);
 	p1Text.setFillColor(sf::Color::Cyan);
 	p2Text.setFillColor(sf::Color::Red);
 

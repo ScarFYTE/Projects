@@ -16,6 +16,8 @@ class Game {
 	static constexpr float PLAYER_W       =  50.0f;
 	static constexpr float PLAYER_H       =  50.0f;
 	static constexpr float GROUND_H       =  20.0f;
+	Vec2 P1_SPAWN = Vec2(WINDOW_WIDTH * 0.25f, WINDOW_HEIGHT - GROUND_H - PLAYER_H * 0.5f);
+	Vec2 P2_SPAWN = Vec2(WINDOW_WIDTH * 0.5f, WINDOW_HEIGHT - GROUND_H - PLAYER_H * 0.5f);
 
 	// -----------------------------------------------------------------------
 	// Members

@@ -24,6 +24,9 @@ public:
 	CBoundingBox(float w, float h) : halfSize(w * 0.5f, h * 0.5f) {}
 	float width()  const { return halfSize.x * 2.0f; }
 	float height() const { return halfSize.y * 2.0f; }
+
+	CBoundingBox() : halfSize(0, 0) {}
+	CBoundingBox(const Vec2& halfSize) : halfSize(halfSize) {}
 };
 
 class CParticle {
