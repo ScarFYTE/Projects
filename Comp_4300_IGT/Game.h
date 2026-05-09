@@ -3,6 +3,14 @@
 #include "Entity.h"
 #include <SFML/Graphics.hpp>
 
+enum class GameState {
+	MENU,
+	PLAYING,
+	PAUSED,
+	RESET_FLASH,
+	WIN
+};
+
 class Game {
 	// -----------------------------------------------------------------------
 	// Constants
@@ -16,12 +24,12 @@ class Game {
 	static constexpr float PLAYER_W       =  50.0f;
 	static constexpr float PLAYER_H       =  50.0f;
 	static constexpr float GROUND_H       =  20.0f;
-	static constexpr float ACCELERATION = 1.2f;  // speed gained per frame
-	static constexpr float FRICTION = 0.75f; // multiplier when no input (0-1, lower = more friction)
-	static constexpr float TURN_FRICTION = 0.55f; // multiplier on direction change (faster stop)
-	static constexpr float MAX_MOVE_SPEED = 7.0f;  // replaces MOVE_SPEED for horizontal cap
+	static constexpr float ACCELERATION = 1.2f;
+	static constexpr float FRICTION = 0.75f;
+	static constexpr float TURN_FRICTION = 0.55f;
+	static constexpr float MAX_MOVE_SPEED = 7.0f;
 	Vec2 P1_SPAWN = Vec2(WINDOW_WIDTH * 0.25f, WINDOW_HEIGHT - GROUND_H - PLAYER_H * 0.5f);
-	Vec2 P2_SPAWN = Vec2(WINDOW_WIDTH * 0.5f, WINDOW_HEIGHT - GROUND_H - PLAYER_H * 0.5f);
+	Vec2 P2_SPAWN = Vec2(WINDOW_WIDTH * 0.5f,  WINDOW_HEIGHT - GROUND_H - PLAYER_H * 0.5f);
 
 	// -----------------------------------------------------------------------
 	// Members
@@ -31,6 +39,9 @@ class Game {
 	EntityManager    entityManager;
 	bool Running      = true;
 	int  currentFrame = 0;
+
+	GameState state          = GameState::PLAYING;
+	int       resetFlashTimer = 0;
 
 	sf::View gameView;
 	float baseZoom = 1.0f;
@@ -43,25 +54,27 @@ class Game {
 	// -----------------------------------------------------------------------
 	void init();
 	void loadConfig(const std::string& path);
-	void spawnGround();
 	void spawnPlayers();
 	void spawnDustParticles(Vec2 position, int count = 6, float directionX = 0.0f);
 	void RenderHud();
-	void KillPlayer(std::shared_ptr<Entity> player);
-	void RespawnPlayer(std::shared_ptr<Entity> player);
+	void ResetToCheckpoint();
+
 	// Systems
 	void sUserInput();
 	void sGravity();
 	void sMovement();
+	void sPatrol();
+	void sSight();
+	void sInteract();
+	void sMovingPlatform();
+	void sCheckpoint();
 	void sCollision();
-	void sRender();
-	void sCamera();
+	void sWinCondition();
 	void sParticle();
-	void sHealth();
+	void sCamera();
+	void sRender();
 
 public:
-
-
 	Game();
 	void Run();
 };
