@@ -53,6 +53,7 @@ class Game {
 	void sRender();
 	void sCamera();
 	void sParticle();
+	void sHealth();
 
 public:
 

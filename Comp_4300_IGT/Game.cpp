@@ -100,6 +100,7 @@ void Game::Run() {
 		sUserInput();
 		sGravity();
 		sMovement();
+		sHealth();
 		sCollision();
 		sCamera();
 		sRender();
@@ -109,25 +110,50 @@ void Game::Run() {
 
 // Systems
 void Game::sCamera() {
-	if (!player1->transform || !player2->transform) { return; }
 
-	Vec2 p1 = player1->transform->position;
-	Vec2 p2 = player2->transform->position;
+	// Only consider living players for camera calculation
+	bool p1Alive = player1->transform && !player1->health->isDead;
+	bool p2Alive = player2->transform && !player2->health->isDead;
 
-	// Midpoint between both players
-	float cx = (p1.x + p2.x) / 2.0f;
-	float cy = (p1.y + p2.y) / 2.0f;
-	gameView.setCenter({ cx, cy });
+	// Neither alive — freeze camera where it is
+	if (!p1Alive && !p2Alive) { return; }
 
-	// Distance between players — zoom out to fit both + padding
-	float dist = std::sqrt((p2.x - p1.x) * (p2.x - p1.x) +
-		(p2.y - p1.y) * (p2.y - p1.y));
-	float minSize = static_cast<float>(WINDOW_WIDTH);          // never zoom in past default
-	float needed = std::max(minSize, dist * 1.6f);            
-	float viewW = needed;
-	float viewH = needed * (static_cast<float>(WINDOW_HEIGHT) / WINDOW_WIDTH);
+	float cx, cy, viewW, viewH;
 
-	gameView.setSize({ viewW, viewH });
+	if (p1Alive && p2Alive) {
+		// Both alive
+		Vec2 p1 = player1->transform->position;
+		Vec2 p2 = player2->transform->position;
+
+		cx = (p1.x + p2.x) / 2.0f;
+		cy = (p1.y + p2.y) / 2.0f;
+
+		float dist = std::sqrt((p2.x - p1.x) * (p2.x - p1.x) +
+			(p2.y - p1.y) * (p2.y - p1.y));
+		float needed = std::max(static_cast<float>(WINDOW_WIDTH), dist * 1.6f);
+		viewW = needed;
+		viewH = needed * (static_cast<float>(WINDOW_HEIGHT) / WINDOW_WIDTH);
+
+	}
+	else {
+		// One player dead 
+		Vec2 pos = p1Alive ? player1->transform->position
+			: player2->transform->position;
+		cx = pos.x;
+		cy = pos.y;
+		viewW = static_cast<float>(WINDOW_WIDTH);
+		viewH = static_cast<float>(WINDOW_HEIGHT);
+	}
+
+	// Smooth lerp so camera doesn't snap
+	sf::Vector2f current = gameView.getCenter();
+	sf::Vector2f target = { cx, cy };
+	gameView.setCenter(current + (target - current) * 0.1f);
+
+	sf::Vector2f currentSize = gameView.getSize();
+	sf::Vector2f targetSize = { viewW, viewH };
+	gameView.setSize(currentSize + (targetSize - currentSize) * 0.1f);
+
 	window.setView(gameView);
 }
 
@@ -346,6 +372,34 @@ void Game::sParticle() {
 		sf::Color c = p->color;
 		c.a = static_cast<std::uint8_t>(p->alpha() * 255);
 		e->sprite->getShape().setFillColor(c);
+	}
+}
+
+void Game::sHealth() {
+	for (auto& e : entityManager.GetEntities("Player")) {
+		if (!e->health || !e->transform) { continue; }
+
+		auto& h = e->health;
+		auto& t = e->transform;
+
+		
+		if (!h->isDead && t->position.y > WINDOW_HEIGHT + 100.0f) {
+			KillPlayer(e);
+		}
+
+		// respawn timer tick
+		if (h->isRespawning()) {
+			h->respawnTimer--;
+
+			if (h->respawnTimer <= 0) {
+				RespawnPlayer(e);
+			}
+		}
+
+		// check lives all lost
+		if (!h->isDead && h->lives <= 0) {
+			//yet remains
+		}
 	}
 }
 
