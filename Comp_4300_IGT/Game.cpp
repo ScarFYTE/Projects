@@ -46,16 +46,18 @@ void Game::loadConfig(const std::string& path) {
 // ---------------------------------------------------------------------------
 // Spawners
 // -------------------------------------------------------------------------
-void Game::spawnDustParticles(Vec2 position, int count) {
+void Game::spawnDustParticles(Vec2 position, int count, float directionX) {
 	for (int i = 0; i < count; i++) {
 		auto p = entityManager.AddEntity("Particle");
 
-		float vx = ((rand() % 300) - 150) / 100.0f;  // -1.5 to +1.5
-		float vy = -((rand() % 200) + 50) / 100.0f; // -0.5 to -2.5 upward
+		// If directionX given, bias particles that way (skid kicks backwards)
+		float biasX = (directionX != 0.0f) ? directionX * 1.5f : 0.0f;
+		float vx = biasX + ((rand() % 200) - 100) / 100.0f;
+		float vy = -((rand() % 150) + 30) / 100.0f;
 
 		p->transform = std::make_shared<CTransform>(position, Vec2(vx, vy), 0.0f);
 		p->sprite = std::make_shared<CSprite>(4.0f, 4.0f, sf::Color(200, 170, 120));
-		p->particle = std::make_shared<CParticle>(20.0f, sf::Color(200, 170, 120));
+		p->particle = std::make_shared<CParticle>(18.0f, sf::Color(200, 170, 120));
 	}
 }
 
@@ -219,26 +221,75 @@ void Game::sMovement() {
 	for (auto& e : entityManager.GetEntities("Player")) {
 		if (!e->transform || !e->input) { continue; }
 
-		// Horizontal input overrides x-velocity each frame
-		e->transform->velocity.x = 0.0f;
-		if (e->input->left)  { e->transform->velocity.x = -MOVE_SPEED; }
-		if (e->input->right) { e->transform->velocity.x =  MOVE_SPEED; }
+		auto& t = e->transform;
+		auto& in = e->input;
 
-		// Jumping
-		if (e->input->jump && (e->transform->onGround || e->transform->coyoteFrames > 0 || e->transform->JumpBufferFrames > 0)) {
-			e->transform->velocity.y = JUMP_VELOCITY;
-			e->transform->onGround = false;
-			e->transform->coyoteFrames = 0;
-			e->transform->JumpBufferFrames = 0;
+		// --- Jump buffer ---
+		if (in->jump) {
+			t->JumpBufferFrames = 8;
+			in->jump = false;
+		}
+		if (t->JumpBufferFrames > 0) { t->JumpBufferFrames--; }
 
-			spawnDustParticles(Vec2(e->transform->position.x, e->transform->position.y + e->boundingBox->halfSize.y), 12);
+		bool canJump = t->onGround || t->coyoteFrames > 0;
+		if (t->JumpBufferFrames > 0 && canJump) {
+			t->velocity.y = JUMP_VELOCITY;
+			t->onGround = false;
+			t->coyoteFrames = 0;
+			t->JumpBufferFrames = 0;
+			spawnDustParticles(
+				Vec2(t->position.x, t->position.y + e->boundingBox->halfSize.y), 8
+			);
 		}
 
-		e->transform->position.x += e->transform->velocity.x;
-		e->transform->position.y += e->transform->velocity.y;
+		// --- Horizontal acceleration ---
+		bool pushingLeft = in->left && !in->right;
+		bool pushingRight = in->right && !in->left;
+
+		// Direction change — player is moving one way and input is the other
+		bool turningLeft = pushingLeft && t->velocity.x > 0.5f;
+		bool turningRight = pushingRight && t->velocity.x < -0.5f;
+		bool turning = turningLeft || turningRight;
+
+		if (turning) {
+			// Skid: decelerate faster + spawn directional dust
+			t->velocity.x *= TURN_FRICTION;
+
+			// Dust only on first frame of turn (avoid spamming every frame)
+			if (std::abs(t->velocity.x) > 1.5f) {
+				Vec2 dustPos = Vec2(t->position.x, t->position.y + e->boundingBox->halfSize.y);
+				// In the turning block — kick dust opposite to velocity (backwards from skid)
+				float skidDir = (t->velocity.x > 0.0f) ? 1.0f : -1.0f; // same dir as movement
+				spawnDustParticles(dustPos, 5, skidDir);
+			}
+
+		}
+		else if (pushingLeft) {
+			t->velocity.x -= ACCELERATION;
+
+		}
+		else if (pushingRight) {
+			t->velocity.x += ACCELERATION;
+
+		}
+		else {
+			// No input — apply friction
+			t->velocity.x *= FRICTION;
+
+			// Stop completely below threshold to prevent infinite sliding
+			if (std::abs(t->velocity.x) < 0.15f) {
+				t->velocity.x = 0.0f;
+			}
+		}
+
+		// Cap horizontal speed
+		t->velocity.x = std::clamp(t->velocity.x, -MAX_MOVE_SPEED, MAX_MOVE_SPEED);
+
+		// Apply movement
+		t->position.x += t->velocity.x;
+		t->position.y += t->velocity.y;
 	}
 }
-
 void Game::sCollision() {
 	const float groundTop = static_cast<float>(WINDOW_HEIGHT) - GROUND_H;
 	const float wf        = static_cast<float>(WINDOW_WIDTH);
