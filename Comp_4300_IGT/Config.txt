@@ -57,13 +57,16 @@ Checkpoint 480 446 350 436 610 436
 
 # === INTERACTIVE ELEMENTS ===
 # Button: x y width height linkedTag requiresStay
+# This button opens gate-A (the door blocking the high platforms)
 Button 100 516 32 16 gate-A 1
+# This button triggers the moving platform plat-A
+Button 900 516 32 16 plat-A 1
 
 # Door: tag x y width height openX openY
 Door gate-A 340 156 24 120 340 0
 
-# Moving platform: tag x y width height targetX targetY speed linkedTag
-Platform plat-A 640 460 128 24 640 300 2.0 btn-plat
+# Moving platform: tag x y width height targetX targetY speed linkedTag(unused,reserved)
+Platform plat-A 640 460 128 24 640 300 2.0 none
 
 # === EXIT ===
 # Exit: x y width height

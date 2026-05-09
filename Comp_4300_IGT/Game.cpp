@@ -651,26 +651,26 @@ void Game::sCollision() {
 		// Moving platform collision (entities with CMovingPlatform act as solid tiles)
 		for (auto& plat : entityManager.GetEntities()) {
 			if (!plat->movingPlatform || !plat->transform || !plat->boundingBox) { continue; }
-			const float pH  = plat->boundingBox->halfSize.x;
-			const float pHH = plat->boundingBox->halfSize.y;
-			const float pX  = plat->transform->position.x;
-			const float pY  = plat->transform->position.y;
+			const float platHW = plat->boundingBox->halfSize.x;
+			const float platHH = plat->boundingBox->halfSize.y;
+			const float platX  = plat->transform->position.x;
+			const float platY  = plat->transform->position.y;
 
-			if (std::abs(e->transform->position.x - pX) < hw + pH &&
-				std::abs(e->transform->position.y - pY) < hh + pHH) {
+			if (std::abs(e->transform->position.x - platX) < hw + platHW &&
+				std::abs(e->transform->position.y - platY) < hh + platHH) {
 
-				float overlapX = (hw + pH)  - std::abs(e->transform->position.x - pX);
-				float overlapY = (hh + pHH) - std::abs(e->transform->position.y - pY);
+				float overlapX = (hw + platHW) - std::abs(e->transform->position.x - platX);
+				float overlapY = (hh + platHH) - std::abs(e->transform->position.y - platY);
 
 				if (overlapX < overlapY) {
-					if (e->transform->position.x < pX) {
+					if (e->transform->position.x < platX) {
 						e->transform->position.x -= overlapX;
 					} else {
 						e->transform->position.x += overlapX;
 					}
 					e->transform->velocity.x = 0.0f;
 				} else {
-					if (e->transform->position.y < pY) {
+					if (e->transform->position.y < platY) {
 						e->transform->position.y -= overlapY;
 						e->transform->onGround    = true;
 					} else {
