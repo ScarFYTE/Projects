@@ -4,13 +4,12 @@
 
 
 # --- ENTITIES (From Layer: entities) ---
-Spawn 104.0 508.0 144.0 508.0
-Spawn 104.0 732.0 144.0 732.0
+Spawn 104.0 508.0 144.0 732.0
 Button 228.0 508.0 8 8 darwaza 0 1
 Door darwaza 304.0 720.0 32 32 0 0
 Door darwaza 272.0 496.0 32 32 0 0
 Platform jahaaz 368.0 516.0 32 8 368 384 2.5 jahaaz
-Button 326.0 508.0 12 8 jahaaz 0 0
+Button 326.0 508.0 12 8 jahaaz 1 0
 Platform uthja 388.0 720.0 8 32 384 672 2.5 uthja
 Platform uthja 412.0 720.0 8 32 408 672 2.5 uthja
 Button 516.0 380.0 8 8 uthja 1 1
