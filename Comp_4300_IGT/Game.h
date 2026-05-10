@@ -169,8 +169,10 @@ class Game {
 
 	std::map<std::string, sf::Texture> textureCache;
 	sf::Texture& getTexture(const std::string& name);
-
-	sf::Sprite backgroundSprite;	
+	
+	
+	sf::Texture dummyBgTex;                     // 1. Create an empty texture
+	sf::Sprite backgroundSprite{ dummyBgTex };  // 2. Feed it to the sprite instantly!
 	bool hasBackground = false;
 
 	LevelQueue  levelQueue;
