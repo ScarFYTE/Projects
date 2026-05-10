@@ -8,25 +8,126 @@ Spawn 104.0 508.0 144.0 732.0
 Button 228.0 508.0 8 8 darwaza 0 1
 Door darwaza 304.0 720.0 32 32 0 0
 Door darwaza 272.0 496.0 32 32 0 0
-Platform jahaaz 368.0 516.0 32 8 368 384 2.5 jahaaz
+Platform jahaaz 368.0 516.0 32 8 368 384 2.5 jahaaz 1
 Button 326.0 508.0 12 8 jahaaz 1 0
-Platform uthja 388.0 720.0 8 32 384 672 2.5 uthja
-Platform uthja 412.0 720.0 8 32 408 672 2.5 uthja
+Platform uthja 388.0 720.0 8 32 400 672 2.5 uthja 1
+Platform uthja 412.0 720.0 8 32 408 672 2.5 uthja 1
 Button 516.0 380.0 8 8 uthja 1 1
-Music level3.ogg
+Platform neeche 784.0 388.0 32 8 780 470 2.5 neeche 1
+Button 797.0 690.0 14 8 neeche 0 1
+Button 784.0 452.0 32 8 boomboom 1 0
+Platform boomboom 848.0 688.0 32 32 848 640 2.5 boomboom 1
+Exit 1488.0 384.0 32 64
+Platform finalboss 1466.0 384.0 8 64 1460 288 2.5 finalboss 2
+Platform oncemore 1212.0 624.0 8 32 1200 550 2.5 oncemore 1
+Platform oncemore 1188.0 624.0 8 32 1200 550 2.5 oncemore 1
+Button 1200.0 513.0 32 10 oncemore 1 0
+Button 1172.0 732.0 8 8 finalboss 0 1
+Platform Plat_1166.0 1166.0 740.0 28 8 0 0 2.5 Plat_1166.0 1
+Platform Plat_1266.0 1266.0 772.0 24 8 0 0 2.5 Plat_1266.0 1
+Button 1220.0 356.0 8 8 flying 0 1
+Platform flying 1264.0 452.0 32 8 1264 128 2.5 flying 1
+Button 452.0 118.0 8 8 finalboss 0 1
+Platform bus 1456.0 496.0 32 32 1456 448 2.5 bus 1
+Button 1424.0 510.0 32 8 bus 1 0
+Platform bus 1552.0 612.0 32 8 1552 512 2.5 bus 1
 # --- TILES (From Layer: solidgeometry) ---
+Tile 400.0 80.0 32 32 Wall
+Tile 816.0 80.0 800 32 Metal_Floor
+Tile 1440.0 80.0 320 32 Metal_Floor
+Tile 400.0 112.0 32 32 Wall
+Tile 1584.0 112.0 32 32 Metal_Floor
+Tile 400.0 144.0 32 32 Wall
+Tile 816.0 144.0 800 32 Metal_Floor
+Tile 1408.0 144.0 256 32 Metal_Floor
+Tile 1584.0 144.0 32 32 Metal_Floor
+Tile 400.0 176.0 32 32 Wall
+Tile 816.0 176.0 800 32 Metal_Floor
+Tile 1408.0 176.0 256 32 Metal_Floor
+Tile 1584.0 176.0 32 32 Metal_Floor
+Tile 400.0 208.0 32 32 Wall
+Tile 816.0 208.0 800 32 Metal_Floor
+Tile 1408.0 208.0 256 32 Metal_Floor
+Tile 1584.0 208.0 32 32 Metal_Floor
+Tile 400.0 240.0 32 32 Wall
+Tile 816.0 240.0 800 32 Metal_Floor
+Tile 1312.0 240.0 64 32 Metal_Floor
+Tile 1520.0 240.0 32 32 Metal_Floor
+Tile 1584.0 240.0 32 32 Metal_Floor
+Tile 400.0 272.0 32 32 Wall
+Tile 816.0 272.0 800 32 Metal_Floor
+Tile 1312.0 272.0 64 32 Metal_Floor
+Tile 1520.0 272.0 32 32 Metal_Floor
+Tile 1584.0 272.0 32 32 Metal_Floor
+Tile 400.0 304.0 32 32 Wall
+Tile 816.0 304.0 800 32 Metal_Floor
+Tile 1312.0 304.0 64 32 Metal_Floor
+Tile 1520.0 304.0 32 32 Metal_Floor
+Tile 1584.0 304.0 32 32 Metal_Floor
+Tile 1152.0 336.0 128 32 Metal_Floor
+Tile 1312.0 336.0 64 32 Metal_Floor
+Tile 1520.0 336.0 32 32 Metal_Floor
+Tile 1584.0 336.0 32 32 Metal_Floor
+Tile 1168.0 368.0 96 32 Metal_Floor
+Tile 1312.0 368.0 64 32 Metal_Floor
+Tile 1520.0 368.0 32 32 Metal_Floor
+Tile 1584.0 368.0 32 32 Metal_Floor
 Tile 400.0 400.0 32 32 Wall
-Tile 480.0 400.0 128 32 Metal_Floor
+Tile 592.0 400.0 352 32 Metal_Floor
+Tile 832.0 400.0 64 32 Metal_Floor
+Tile 1168.0 400.0 32 32 Metal_Floor
+Tile 1312.0 400.0 64 32 Metal_Floor
+Tile 1520.0 400.0 32 32 Metal_Floor
+Tile 1584.0 400.0 32 32 Metal_Floor
 Tile 400.0 432.0 32 32 Wall
+Tile 592.0 432.0 352 32 Metal_Floor
+Tile 848.0 432.0 96 32 Metal_Floor
+Tile 1312.0 432.0 64 32 Metal_Floor
+Tile 1504.0 432.0 64 32 Metal_Floor
+Tile 1584.0 432.0 32 32 Metal_Floor
 Tile 400.0 464.0 32 32 Wall
+Tile 672.0 464.0 512 32 Metal_Floor
+Tile 1296.0 464.0 96 32 Metal_Floor
+Tile 1472.0 464.0 64 32 Metal_Floor
+Tile 1584.0 464.0 32 32 Metal_Floor
 Tile 400.0 496.0 32 32 Wall
+Tile 688.0 496.0 544 32 Metal_Floor
+Tile 1280.0 496.0 128 32 Metal_Floor
+Tile 1584.0 496.0 32 32 Metal_Floor
 Tile 224.0 528.0 320 32 Grass
 Tile 400.0 528.0 32 32 Wall
+Tile 960.0 528.0 64 32 Metal_Floor
+Tile 1168.0 528.0 32 32 Wall
+Tile 1264.0 528.0 160 32 Metal_Floor
+Tile 1440.0 528.0 64 32 Metal_Floor
+Tile 1584.0 528.0 32 32 Metal_Floor
 Tile 400.0 560.0 32 32 Wall
+Tile 976.0 560.0 96 32 Metal_Floor
+Tile 1168.0 560.0 32 32 Wall
+Tile 1248.0 560.0 128 32 Metal_Floor
+Tile 1440.0 560.0 64 32 Metal_Floor
+Tile 1584.0 560.0 32 32 Metal_Floor
 Tile 400.0 592.0 32 32 Wall
+Tile 736.0 592.0 640 32 Metal_Floor
+Tile 1168.0 592.0 32 32 Wall
+Tile 1248.0 592.0 128 32 Metal_Floor
+Tile 1424.0 592.0 96 32 Metal_Floor
+Tile 1584.0 592.0 32 32 Metal_Floor
 Tile 400.0 624.0 32 32 Wall
+Tile 704.0 624.0 576 32 Metal_Floor
+Tile 1488.0 624.0 224 32 Metal_Floor
 Tile 400.0 656.0 32 32 Wall
+Tile 688.0 656.0 544 32 Metal_Floor
+Tile 1168.0 656.0 288 32 Metal_Floor
+Tile 1456.0 656.0 224 32 Metal_Floor
 Tile 400.0 688.0 32 32 Wall
+Tile 608.0 688.0 384 32 Metal_Floor
+Tile 1088.0 688.0 192 32 Metal_Floor
+Tile 1392.0 688.0 96 32 Metal_Floor
+Tile 992.0 720.0 320 32 Metal_Floor
+Tile 1344.0 720.0 128 32 Metal_Floor
 Tile 240.0 752.0 352 32 Grass
-Tile 496.0 752.0 160 32 Metal_Floor
+Tile 784.0 752.0 736 32 Metal_Floor
+Tile 1328.0 752.0 96 32 Metal_Floor
+Music level3.ogg
 Background Level3

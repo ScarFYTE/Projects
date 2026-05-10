@@ -124,6 +124,9 @@ public:
 	Vec2 posB;
 	bool triggered = false;
 	float speed = 2.0f;
+
+	int requiredTriggers = 1;
+	int currentTriggers = 0;
 };
 
 class CCheckpoint {

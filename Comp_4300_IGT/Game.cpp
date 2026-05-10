@@ -13,8 +13,8 @@ Game::Game() {
 void Game::init() {
 
 	levelQueue.enqueue("level1.txt");
-	//levelQueue.enqueue("Level2.txt");
-	//levelQueue.enqueue("Level3.txt");
+	levelQueue.enqueue("Level2.txt");
+	levelQueue.enqueue("Level3.txt");
 
 	// 2. Dequeue the first level and load it
 	if (!levelQueue.isEmpty()) {
@@ -173,7 +173,9 @@ void Game::loadConfig(const std::string& path) {
 			std::string tag;
 			float x, y, w, h, targetX, targetY, speed;
 			std::string linkedTag;
-			iss >> tag >> x >> y >> w >> h >> targetX >> targetY >> speed >> linkedTag;
+			int reqTriggers = 1; // Default fallback
+
+			iss >> tag >> x >> y >> w >> h >> targetX >> targetY >> speed >> linkedTag >> reqTriggers;
 
 			auto plat = entityManager.AddEntity(tag);
 			plat->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
@@ -184,6 +186,7 @@ void Game::loadConfig(const std::string& path) {
 			mp->posA = Vec2(x, y);
 			mp->posB = Vec2(targetX, targetY);
 			mp->speed = speed;
+			mp->requiredTriggers = reqTriggers; // Store the requirement
 			plat->movingPlatform = mp;
 		}
 		else if (type == "Checkpoint") {
@@ -589,13 +592,26 @@ void Game::sInteract() {
 		}
 			
 		// 3. Trigger linked entities (Doors, Platforms)
+		// 3. Trigger linked entities (Doors, Platforms)
 		if (inter->isPressed != wasPressed) {
 			buttonSound.play();
 
 			for (auto& ent : entityManager.GetEntities()) {
-				// Moving Platforms (still use standard Tags)
+
+				// Kim china - Multi-trigger logic for Platforms
 				if (ent->movingPlatform && ent->GetTag() == inter->linkedTag) {
-					ent->movingPlatform->triggered = inter->isPressed;
+
+					// Add or remove a trigger count based on the button's new state
+					if (inter->isPressed) {
+						ent->movingPlatform->currentTriggers++;
+					}
+					else {
+						ent->movingPlatform->currentTriggers--;
+					}
+
+					// Only activate the platform if we hit the required threshold
+					ent->movingPlatform->triggered =
+						(ent->movingPlatform->currentTriggers >= ent->movingPlatform->requiredTriggers);
 				}
 
 				// Doors (Now check their internal linkTag!)
@@ -1399,7 +1415,7 @@ void Game::RenderGameWon() {
 
 	sub.setCharacterSize(28);
 	sub.setFillColor(sf::Color::White);
-	sub.setString("DO NO BHAI GAYE BILLO DE GHAR");
+	sub.setString("DONO BHAI GAYE BILLO DE GHAR");
 	sub.setPosition({ cx - sub.getLocalBounds().size.x * 0.5f, cy });
 
 	hint.setCharacterSize(22);
