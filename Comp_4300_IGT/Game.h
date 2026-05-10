@@ -167,6 +167,9 @@ class Game {
 	sf::Texture p1HeartTex; // NEW
 	sf::Texture p2HeartTex; // NEW
 
+	std::map<std::string, sf::Texture> textureCache;
+	sf::Texture& getTexture(const std::string& name);
+
 	LevelQueue  levelQueue;
 	std::string currentLevelPath;    
 	bool isLoadingNextLevel = false;
