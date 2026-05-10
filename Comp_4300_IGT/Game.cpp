@@ -15,7 +15,8 @@ void Game::init() {
 
 	if (font.openFromFile("Fonts/Coolvetica Rg.otf")) {
 		std::cout << "Font loed successfully." << std::endl;
-	} else {
+	}
+	else {
 		std::cerr << "Failed to load font ##########." << std::endl;
 	}
 	window.create(sf::VideoMode({ WINDOW_WIDTH, WINDOW_HEIGHT }), "2D Platformer - 2 Player");
@@ -68,30 +69,30 @@ void Game::spawnGround() {
 	const float cx = w * 0.5f;
 	const float cy = static_cast<float>(WINDOW_HEIGHT) - GROUND_H * 0.5f;
 
-	ground->transform   = std::make_shared<CTransform>(Vec2(cx, cy), Vec2(0.0f, 0.0f), 0.0f);
+	ground->transform = std::make_shared<CTransform>(Vec2(cx, cy), Vec2(0.0f, 0.0f), 0.0f);
 	ground->boundingBox = std::make_shared<CBoundingBox>(w, GROUND_H);
-	ground->sprite      = std::make_shared<CSprite>(w, GROUND_H, sf::Color(100, 80, 60));
+	ground->sprite = std::make_shared<CSprite>(w, GROUND_H, sf::Color(100, 80, 60));
 }
 
 void Game::spawnPlayers() {
 	const float groundTop = static_cast<float>(WINDOW_HEIGHT) - GROUND_H;
-	const float spawnY    = groundTop - PLAYER_H * 0.5f;
+	const float spawnY = groundTop - PLAYER_H * 0.5f;
 
 	// --- Player 1 (WASD) --- blue box, left side
 	player1 = entityManager.AddEntity("Player");
-	player1->transform   = std::make_shared<CTransform>(P1_SPAWN, Vec2(0.0f, 0.0f), 0.0f);
+	player1->transform = std::make_shared<CTransform>(P1_SPAWN, Vec2(0.0f, 0.0f), 0.0f);
 	player1->boundingBox = std::make_shared<CBoundingBox>(PLAYER_W, PLAYER_H);
-	player1->sprite      = std::make_shared<CSprite>(PLAYER_W, PLAYER_H, sf::Color(50, 100, 200));
-	player1->input       = std::make_shared<CInput>();
-	player1->health		 = std::make_shared<CHealth>();
+	player1->sprite = std::make_shared<CSprite>(PLAYER_W, PLAYER_H, sf::Color(50, 100, 200));
+	player1->input = std::make_shared<CInput>();
+	player1->health = std::make_shared<CHealth>();
 
 	// --- Player 2 (Arrow keys) --- red box, right side
 	player2 = entityManager.AddEntity("Player");
-	player2->transform   = std::make_shared<CTransform>(P2_SPAWN, Vec2(0.0f, 0.0f), 0.0f);
+	player2->transform = std::make_shared<CTransform>(P2_SPAWN, Vec2(0.0f, 0.0f), 0.0f);
 	player2->boundingBox = std::make_shared<CBoundingBox>(PLAYER_W, PLAYER_H);
-	player2->sprite      = std::make_shared<CSprite>(PLAYER_W, PLAYER_H, sf::Color(200, 50, 50));
-	player2->input       = std::make_shared<CInput>();
-	player2->health		 = std::make_shared<CHealth>();
+	player2->sprite = std::make_shared<CSprite>(PLAYER_W, PLAYER_H, sf::Color(200, 50, 50));
+	player2->input = std::make_shared<CInput>();
+	player2->health = std::make_shared<CHealth>();
 }
 
 // Main loop
@@ -168,12 +169,12 @@ void Game::sUserInput() {
 
 		if (const auto* kp = event->getIf<sf::Event::KeyPressed>()) {
 			switch (kp->code) {
-			case sf::Keyboard::Key::W: player1->input->jump  = true; break;
-			case sf::Keyboard::Key::A: player1->input->left  = true; break;
+			case sf::Keyboard::Key::W: player1->input->jump = true; break;
+			case sf::Keyboard::Key::A: player1->input->left = true; break;
 			case sf::Keyboard::Key::D: player1->input->right = true; break;
 
-			case sf::Keyboard::Key::Up: player2->input->jump	 = true; break;
-			case sf::Keyboard::Key::Left:  player2->input->left  = true; break;
+			case sf::Keyboard::Key::Up: player2->input->jump = true; break;
+			case sf::Keyboard::Key::Left:  player2->input->left = true; break;
 			case sf::Keyboard::Key::Right: player2->input->right = true; break;
 
 			default: break;
@@ -182,18 +183,19 @@ void Game::sUserInput() {
 
 		if (const auto* kr = event->getIf<sf::Event::KeyReleased>()) {
 			switch (kr->code) {
-			case sf::Keyboard::Key::A: player1->input->left  = false; break;
+			case sf::Keyboard::Key::A: player1->input->left = false; break;
 			case sf::Keyboard::Key::D: player1->input->right = false; break;
-			case sf::Keyboard::Key::W: player1->input->jump  = false; break;
-			case sf::Keyboard::Key::Left:  player2->input->left  = false; break;
+			case sf::Keyboard::Key::W: player1->input->jump = false; break;
+			case sf::Keyboard::Key::Left:  player2->input->left = false; break;
 			case sf::Keyboard::Key::Right: player2->input->right = false; break;
-			case sf::Keyboard::Key::Up: player2->input->jump	 = false; break;
-			
+			case sf::Keyboard::Key::Up: player2->input->jump = false; break;
+
 			default: break;
 			}
 		}
 	}
 }
+
 void Game::sGravity() {
 	for (auto& e : entityManager.GetEntities("Player")) {
 		if (!e->transform) { continue; }
@@ -204,7 +206,7 @@ void Game::sGravity() {
 
 		bool wasOnGround = t->onGround;
 
-		t->onGround = false; 
+		t->onGround = false;
 		if (wasOnGround && !t->onGround && t->velocity.y >= 0.0f) {
 			t->coyoteFrames = 8;  // 8 frames of window to still allow jump after leaving ground
 		}
@@ -291,7 +293,7 @@ void Game::sMovement() {
 }
 void Game::sCollision() {
 	const float groundTop = static_cast<float>(WINDOW_HEIGHT) - GROUND_H;
-	const float wf        = static_cast<float>(WINDOW_WIDTH);
+	const float wf = static_cast<float>(WINDOW_WIDTH);
 
 	for (auto& e : entityManager.GetEntities("Player")) {
 		if (!e->transform || !e->boundingBox) { continue; }
@@ -319,11 +321,11 @@ void Game::sCollision() {
 
 		//Tiles
 		for (auto& Tile : entityManager.GetEntities("Tile")) {
-			if(!Tile->transform || !Tile->boundingBox){ continue; }
+			if (!Tile->transform || !Tile->boundingBox) { continue; }
 			const float tileHW = Tile->boundingBox->halfSize.x;
 			const float tileHH = Tile->boundingBox->halfSize.y;
-			const float tileX  = Tile->transform->position.x;
-			const float tileY  = Tile->transform->position.y;
+			const float tileX = Tile->transform->position.x;
+			const float tileY = Tile->transform->position.y;
 
 			if (std::abs(e->transform->position.x - tileX) < hw + tileHW &&
 				std::abs(e->transform->position.y - tileY) < hh + tileHH) {
@@ -334,11 +336,13 @@ void Game::sCollision() {
 					// horizontal collision
 					if (e->transform->position.x < tileX) {
 						e->transform->position.x -= overlapX;
-					} else {
+					}
+					else {
 						e->transform->position.x += overlapX;
 					}
 					e->transform->velocity.x = 0.0f;
-				} else {
+				}
+				else {
 					// vertical collision
 					if (e->transform->position.y < tileY) {
 						e->transform->position.y -= overlapY;
@@ -351,37 +355,7 @@ void Game::sCollision() {
 
 						e->transform->onGround = true;
 					}
-					e->transform->velocity.y = 0.0f;
-				}
-			}
-		}
-
-		// Moving platform collision (entities with CMovingPlatform act as solid tiles)
-		for (auto& plat : entityManager.GetEntities()) {
-			if (!plat->movingPlatform || !plat->transform || !plat->boundingBox) { continue; }
-			const float pH  = plat->boundingBox->halfSize.x;
-			const float pHH = plat->boundingBox->halfSize.y;
-			const float pX  = plat->transform->position.x;
-			const float pY  = plat->transform->position.y;
-
-			if (std::abs(e->transform->position.x - pX) < hw + pH &&
-				std::abs(e->transform->position.y - pY) < hh + pHH) {
-
-				float overlapX = (hw + pH)  - std::abs(e->transform->position.x - pX);
-				float overlapY = (hh + pHH) - std::abs(e->transform->position.y - pY);
-
-				if (overlapX < overlapY) {
-					if (e->transform->position.x < pX) {
-						e->transform->position.x -= overlapX;
-					} else {
-						e->transform->position.x += overlapX;
-					}
-					e->transform->velocity.x = 0.0f;
-				} else {
-					if (e->transform->position.y < pY) {
-						e->transform->position.y -= overlapY;
-						e->transform->onGround    = true;
-					} else {
+					else {
 						e->transform->position.y += overlapY;
 					}
 					e->transform->velocity.y = 0.0f;
@@ -415,14 +389,14 @@ void Game::sCollision() {
 				else {
 					// vertical collision
 					if (e->transform->position.y < otherY) {
-						e->transform->position.y -= overlapY ;\
-						e->transform->onGround = true; // Player is on top of the other player
-						e->transform->velocity -= Other->transform->velocity/2;
+						e->transform->position.y -= overlapY;\
+							e->transform->onGround = true; // Player is on top of the other player
+						e->transform->velocity -= Other->transform->velocity / 2;
 					}
 					else {
-						Other->transform->position.y -= overlapY ;
+						Other->transform->position.y -= overlapY;
 						Other->transform->onGround = true;// Other is on top of the s
-						Other->transform->velocity -= e->transform->velocity/2;
+						Other->transform->velocity -= e->transform->velocity / 2;
 					}
 				}
 			}
@@ -462,7 +436,7 @@ void Game::sHealth() {
 		auto& h = e->health;
 		auto& t = e->transform;
 
-		
+
 		if (!h->isDead && t->position.y > WINDOW_HEIGHT + 100.0f) {
 			KillPlayer(e);
 		}
@@ -536,7 +510,7 @@ void Game::RenderHud() {
 	}
 
 	std::string p2Lives = "P2: ";
-	for (int i = 0; i < player2->health->lives; i++) { p2Lives += "<3 ";}
+	for (int i = 0; i < player2->health->lives; i++) { p2Lives += "<3 "; }
 
 	p1Text.setString(p1Lives);
 	p2Text.setString(p2Lives);
