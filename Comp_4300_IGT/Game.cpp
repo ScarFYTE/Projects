@@ -300,19 +300,37 @@ void Game::sCamera() {
 	float cx, cy, viewW, viewH;
 
 	if (p1Alive && p2Alive) {
-		// Both alive
 		Vec2 p1 = player1->transform->position;
 		Vec2 p2 = player2->transform->position;
 
+		// 1. Midpoint (Target Center)
 		cx = (p1.x + p2.x) / 2.0f;
 		cy = (p1.y + p2.y) / 2.0f;
 
-		float dist = std::sqrt((p2.x - p1.x) * (p2.x - p1.x) +
-			(p2.y - p1.y) * (p2.y - p1.y));
-		float needed = std::max(static_cast<float>(WINDOW_WIDTH)/2, dist/2 );
-		viewW = needed;
-		viewH = needed * (static_cast<float>(WINDOW_HEIGHT) / WINDOW_WIDTH);
+		// 2. Calculate distances with extra padding (e.g., 200px)
+		float dx = std::abs(p1.x - p2.x) + 200.f;
+		float dy = std::abs(p1.y - p2.y) + 200.f;
 
+		// 3. Keep aspect ratio correct
+		float aspect = static_cast<float>(WINDOW_HEIGHT) / WINDOW_WIDTH;
+
+		// 4. Calculate required width/height
+		// We check if the height spread is more restrictive than the width
+		if (dy > dx * aspect) {
+			viewH = std::max(static_cast<float>(WINDOW_HEIGHT), dy);
+			viewW = viewH / aspect;
+		}
+		else {
+			viewW = std::max(static_cast<float>(WINDOW_WIDTH), dx);
+			viewH = viewW * aspect;
+		}
+
+		// 5. OPTIONAL: Max Zoom Cap (Prevents players from becoming tiny dots)
+		// If the distance is over 2500px, stop zooming out.
+		if (viewW > 2500.f) {
+			viewW = 2500.f;
+			viewH = 2500.f * aspect;
+		}
 	}
 	else {
 		// One player dead 
