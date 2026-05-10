@@ -94,7 +94,7 @@ public:
 
 class CInteractable {
 public:
-	string linkedTag;       // tag of the entity this triggers
+	std::string linkedTag;       // tag of the entity this triggers
 	bool isPressed = false;
 	bool requiresStay = true; // true = pressure plate, false = one-shot lever
 };

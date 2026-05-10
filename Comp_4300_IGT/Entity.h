@@ -21,6 +21,7 @@ public:
 	std::shared_ptr<CInput>       input;
 	std::shared_ptr<CParticle>    particle;
 	std::shared_ptr<CHealth>	  health;
+	std::shared_ptr<CMovingPlatform> movingPlatform;
 	
 
 	void 		SaveBoundingbox();

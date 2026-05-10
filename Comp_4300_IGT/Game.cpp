@@ -538,3 +538,44 @@ void Game::sRender() {
 	RenderHud();
 	window.display();
 }
+
+void Game::sMovingPlatform() {
+	for (auto& e : entityManager.GetEntities()) {
+		if (!e->movingPlatform || !e->transform || !e->boundingBox) { continue; }
+
+		Vec2 target = e->movingPlatform->triggered ? e->movingPlatform->posB : e->movingPlatform->posA;
+		Vec2 current = e->transform->position;
+
+		Vec2 direction = target - current;
+
+		float distSq = (direction.x * direction.x) + (direction.y * direction.y);
+		float speedSq = e->movingPlatform->speed * e->movingPlatform->speed;
+
+		Vec2 moveAmount(0.0f, 0.0f);
+
+		if (distSq > speedSq) {
+			Vec2 normDir = direction.Normalize();
+			moveAmount = normDir * e->movingPlatform->speed;
+			e->transform->position += moveAmount;
+		}
+		else {
+			moveAmount = target - current; // Exact distance left to snap
+			e->transform->position = target;
+		}
+
+		for (auto& player : entityManager.GetEntities("Player")) {
+			if (!player->transform || !player->boundingBox) { continue; }
+			float platTop = current.y - e->boundingBox->halfSize.y;
+			float platLeft = current.x - e->boundingBox->halfSize.x;
+			float platRight = current.x + e->boundingBox->halfSize.x;
+
+			float playerBottom = player->transform->position.y + player->boundingBox->halfSize.y;
+			float playerX = player->transform->position.x;
+
+			if (std::abs(playerBottom - platTop) < 3.0f && playerX > platLeft && playerX < platRight) {
+				// Apply the exact same movement to the player
+				player->transform->position += moveAmount;
+			}
+		}
+	}
+}

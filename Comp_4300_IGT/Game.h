@@ -58,6 +58,7 @@ class Game {
 	void sCamera();
 	void sParticle();
 	void sHealth();
+	void sMovingPlatform();
 
 public:
 
