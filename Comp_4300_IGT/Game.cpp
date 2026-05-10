@@ -220,14 +220,25 @@ void Game::loadConfig(const std::string& path) {
 		else if (type == "Background") {
 				std::string bgName;
 				iss >> bgName;
-				bgName += ".png"; // Assuming all backgrounds are PNGs in the same folder
+
+				// --- THE FIX: Strip invisible Windows line endings ---
+				if (!bgName.empty() && bgName.back() == '\r') {
+					bgName.pop_back();
+				}
+				// ---------------------------------------------------
+
+				std::cout << "Attempting to load Background: " << bgName << std::endl;
+
 				sf::Texture& bgTex = getTexture(bgName);
 				backgroundSprite.setTexture(bgTex);
 
-				// Automatically stretch the image to perfectly fit the 1280x720 window
-				float scaleX = static_cast<float>(WINDOW_WIDTH) / bgTex.getSize().x;
-				float scaleY = static_cast<float>(WINDOW_HEIGHT) / bgTex.getSize().y;
-				backgroundSprite.setScale({ scaleX, scaleY });
+				// Automatically stretch the image to perfectly fit the window
+				// Make sure we don't divide by zero if the texture failed to load!
+				if (bgTex.getSize().x > 0 && bgTex.getSize().y > 0) {
+					float scaleX = static_cast<float>(WINDOW_WIDTH) / bgTex.getSize().x;
+					float scaleY = static_cast<float>(WINDOW_HEIGHT) / bgTex.getSize().y;
+					backgroundSprite.setScale({ scaleX, scaleY });
+				}
 
 				hasBackground = true;
 				}
