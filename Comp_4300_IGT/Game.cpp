@@ -346,7 +346,7 @@ void Game::sUserInput() {
 					if (SelectedOption == 0) {
 						State = GameState::Playing;
 
-						PushMusic("menu.ogg");
+						PopMusic();
 					}
 					else {
 						Running = false;
