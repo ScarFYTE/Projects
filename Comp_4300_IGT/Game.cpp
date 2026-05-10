@@ -1070,6 +1070,8 @@ void Game::StartRespawn(Vec2 focusPoint) {
 	State = GameState::RespawnFadeOut;
 	transitionCenter = focusPoint;  // Center the wipe on the player who died
 	transitionRadius = 3000.0f;     // Start massive to cover the zoomed-out camera
+
+	isLoadingNextLevel = false;     // We are respawning, not advancing the level
 }
 
 void Game::ApplyReset() {
