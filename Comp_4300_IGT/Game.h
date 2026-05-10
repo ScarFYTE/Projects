@@ -170,6 +170,9 @@ class Game {
 	std::map<std::string, sf::Texture> textureCache;
 	sf::Texture& getTexture(const std::string& name);
 
+	sf::Sprite backgroundSprite;	
+	bool hasBackground = false;
+
 	LevelQueue  levelQueue;
 	std::string currentLevelPath;    
 	bool isLoadingNextLevel = false;
