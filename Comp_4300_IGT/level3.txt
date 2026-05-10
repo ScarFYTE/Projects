@@ -1,59 +1,62 @@
 # ==========================================
-# LEVEL: THE FACILITY OF TRUST
+# LEVEL: THE ZENITH VAULT
 # ==========================================
-Music puzzle_theme.ogg
+Music level3.ogg
 
-# --- SPAWN POINTS ---
-# Player 1 spawns up high, Player 2 spawns down low
-Spawn 100.0 500.0 100.0 800.0
+# --- SPAWNS ---
+# P1 on the upper floor, P2 in the lower maintenance crawlspace
+Spawn 150.0 400.0 150.0 750.0
 
-# --- BOUNDARIES & FLOORS (Solid Geometry) ---
-# Ceiling & Walls to box them in
-Tile 800.0 16.0 1600.0 32.0 Stone
-Tile 16.0 450.0 32.0 900.0 Stone
-Tile 1584.0 450.0 32.0 900.0 Stone
+# --- ARCHITECTURE (SOLID GEOMETRY) ---
+# Main Floors
+Tile 600.0 800.0 1200.0 32.0 Stone    # P2 Bottom Floor
+Tile 600.0 450.0 1200.0 32.0 Stone    # P1 Upper Floor (The "Glass" Ceiling)
 
-# P2's Basement Floor (Spans the whole bottom)
-Tile 800.0 834.0 1600.0 32.0 Dirt
+# The Central Shaft (Where they meet)
+Tile 1200.0 400.0 32.0 800.0 Stone
+Tile 1200.0 -400.0 32.0 800.0 Stone   # Verticality! Climbing into negative Y
 
-# P1's Starting Balcony
-Tile 250.0 550.0 500.0 32.0 Grass
+# --- PHASE 1: THE PORTAL CHAIN ---
+# P1 (Top) hits a Toggle to open the first door for P2 (Bottom)
+Button 400.0 434.0 16.0 32.0 crawl_door 0 1
+Door crawl_door 600.0 768.0 32.0 64.0 0 0
+Door crawl_door 800.0 418.0 32.0 64.0 0 0
 
-# P1's Landing Zone (Across the gap)
-Tile 1050.0 550.0 300.0 32.0 Grass
+# P2 teleports to P1's floor. P2 must now stand on a pressure plate 
+# to move an elevator so P1 can reach the Central Shaft.
+Button 900.0 434.0 32.0 16.0 elevator_1 1 0
+Platform elevator_1 1050.0 418.0 128.0 16.0 1050.0 100.0 3.0 elevator_1
 
-# The Exit Platform
-Tile 1450.0 550.0 300.0 32.0 Grass
+# --- PHASE 2: THE GREAT ASCENT (Climbing the Shaft) ---
+# They are now together. They need to climb up.
+Tile 1400.0 100.0 400.0 32.0 Stone
+Tile 1000.0 -150.0 400.0 32.0 Stone
+Tile 1400.0 -400.0 400.0 32.0 Stone
 
-# --- ENEMIES ---
-# Patrols the basement. P2 must wait for it to face left to sneak behind!
-# Enemy X Y | WP1_X WP1_Y | WP2_X WP2_Y | Speed | SightRange | SightAngle
-Enemy 350.0 794.0 250.0 794.0 450.0 794.0 1.5 150.0 45.0
+# Synchronization Puzzle: Two Pressure Plates to activate a high-speed lift
+# Both must stand on these to reach the summit
+Button 1300.0 84.0 32.0 16.0 summit_lift 1 0
+Button 1500.0 84.0 32.0 16.0 summit_lift 1 0
+Platform summit_lift 1200.0 50.0 128.0 16.0 1200.0 -600.0 6.0 summit_lift
 
-# --- INTERACTABLES & PLATFORMS ---
-# 1. THE HOLD LEVER (P2 holds this to move the platform for P1)
-# Button X Y W H LinkTag RequiresStay RequiresInput
-Button 500.0 802.0 16.0 32.0 sky_bridge 1 1
+# --- PHASE 3: THE LEAP OF TRUST (X: 1600 - 4000) ---
+# The Summit Floor
+Tile 2500.0 -650.0 3000.0 32.0 Stone
 
-# The Bridge (Moves when P2 holds the lever)
-# Platform Tag X Y W H TargetX TargetY Speed LinkTag
-Platform sky_bridge 550.0 534.0 96.0 16.0 850.0 534.0 3.5 sky_bridge
+# A massive gap in the floor
+Tile 4500.0 -650.0 500.0 32.0 Stone
 
-# 2. THE PRESSURE PLATE (P1 stands on this to power the doors)
-# Requires Stay (1) but NO Input (0)
-Button 1000.0 526.0 32.0 16.0 rescue_doors 1 0
+# The Bridge Mechanic: P1 must stay behind at the lever
+# If P1 lets go, P2 falls into the void (820 barrier)
+Button 1600.0 -666.0 16.0 32.0 trust_bridge 1 1
+Platform trust_bridge 2500.0 -666.0 1500.0 16.0 2500.0 -666.0 0.0 trust_bridge
 
-# The Rescue Doors (P2 uses this to teleport up to P1)
-# Door Tag X Y W H OpenX OpenY
-Door rescue_doors 1000.0 786.0 32.0 64.0 0 0
-Door rescue_doors 1100.0 502.0 32.0 64.0 0 0
+# Once P2 is across, they hit a Toggle to open a Rescue Portal for P1
+Button 4300.0 -666.0 16.0 32.0 rescue_portal 0 1
+Door rescue_portal 1700.0 -714.0 32.0 64.0 0 0
+Door rescue_portal 4400.0 -714.0 32.0 64.0 0 0
 
-# 3. THE TOGGLE LEVER (Opens the final gate)
-# Requires NO Stay (0), but requires Input (1) - Hit it once!
-Button 1150.0 518.0 16.0 32.0 final_gate 0 1
-
-# The Final Gate (Lifts up out of the way)
-Platform final_gate 1250.0 486.0 32.0 96.0 1250.0 200.0 4.0 final_gate
-
-# --- THE GOAL ---
-Exit 1450.0 502.0 64.0 64.0
+# --- THE ZENITH ---
+Tile 4800.0 -800.0 200.0 32.0 Gold
+Tile 5000.0 -950.0 200.0 32.0 Gold
+Exit 5000.0 -982.0 64.0 64.0
