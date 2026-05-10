@@ -769,7 +769,7 @@ void Game::RenderHud() {
 		p2Text.setString(p2Lives);
 
 		p1Text.setPosition({ 20.f,  20.f });
-		p2Text.setPosition({ 20.0f,  50.0f });
+		p2Text.setPosition({ 1000.0f,  20.0f });
 
 		window.draw(p1Text);
 		window.draw(p2Text);
