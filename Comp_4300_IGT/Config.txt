@@ -1,6 +1,3 @@
-# === SPAWN POSITIONS ===
-Spawn       200 600 400 600
-
 # === BOUNDARIES ===
 # Left wall
 Tile -32 400 64 800
@@ -45,29 +42,3 @@ Tile 810 180 128 24
 # === KILL ZONES (narrow ledges that punish bad landings) ===
 Tile 230 600 64 24
 Tile 960 600 64 24
-
-# === ENEMIES ===
-# Enemy: x y wp1x wp1y wp2x wp2y speed sightRange sightAngle
-Enemy 480 436 300 436 660 436 1.5 180 35
-Enemy 1000 376 850 376 1150 376 1.5 160 35
-
-# === CHECKPOINTS ===
-# Checkpoint: x y p1SpawnX p1SpawnY p2SpawnX p2SpawnY
-Checkpoint 480 446 350 436 610 436
-
-# === INTERACTIVE ELEMENTS ===
-# Button: x y width height linkedTag requiresStay
-# This button opens gate-A (the door blocking the high platforms)
-Button 100 516 32 16 gate-A 1
-# This button triggers the moving platform plat-A
-Button 900 516 32 16 plat-A 1
-
-# Door: tag x y width height openX openY
-Door gate-A 340 156 24 120 340 0
-
-# Moving platform: tag x y width height targetX targetY speed linkedTag(unused,reserved)
-Platform plat-A 640 460 128 24 640 300 2.0 none
-
-# === EXIT ===
-# Exit: x y width height
-Exit 576 120 64 64
