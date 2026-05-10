@@ -221,19 +221,20 @@ void Game::loadConfig(const std::string& path) {
 				std::string bgName;
 				iss >> bgName;
 
-				// --- THE FIX: Strip invisible Windows line endings ---
 				if (!bgName.empty() && bgName.back() == '\r') {
 					bgName.pop_back();
 				}
-				// ---------------------------------------------------
 
 				std::cout << "Attempting to load Background: " << bgName << std::endl;
 
 				sf::Texture& bgTex = getTexture(bgName);
-				backgroundSprite.setTexture(bgTex);
 
-				// Automatically stretch the image to perfectly fit the window
-				// Make sure we don't divide by zero if the texture failed to load!
+				// --- THE FIX IS RIGHT HERE ---
+				// Adding 'true' forces the sprite to open its 0x0 peephole 
+				// to the full size of the new image!
+				backgroundSprite.setTexture(bgTex, true);
+				// -----------------------------
+
 				if (bgTex.getSize().x > 0 && bgTex.getSize().y > 0) {
 					float scaleX = static_cast<float>(WINDOW_WIDTH) / bgTex.getSize().x;
 					float scaleY = static_cast<float>(WINDOW_HEIGHT) / bgTex.getSize().y;
@@ -241,8 +242,7 @@ void Game::loadConfig(const std::string& path) {
 				}
 
 				hasBackground = true;
-				std::cout << "BG Texture Size: " << bgTex.getSize().x << "x" << bgTex.getSize().y << std::endl;
-		}
+				}
 		else {
 			// If we get an unknown token, we just ignore this specific line
 			std::cerr << "Warning: Unknown entity type in config: " << type << std::endl;
