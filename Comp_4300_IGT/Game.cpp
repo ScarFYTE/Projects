@@ -146,17 +146,15 @@ void Game::loadConfig(const std::string& path) {
 		else if (type == "Door") {
 			std::string tag;
 			float x, y, w, h, openX, openY;
-			iss >> tag >> x >> y >> w >> h >> openX >> openY;
+			iss >> tag >> x >> y >> w >> h >> openX >> openY; // We still read openX/Y so Python doesn't break!
 
-			auto door = entityManager.AddEntity(tag);
+			auto door = entityManager.AddEntity("Door"); // Name is universally "Door" now!
 			door->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
 			door->boundingBox = std::make_shared<CBoundingBox>(w, h);
-			door->sprite = std::make_shared<CSprite>(w, h, sf::Color(80, 60, 40));
+			door->sprite = std::make_shared<CSprite>(w, h, sf::Color(80, 60, 40)); // Closed door color
 
 			auto d = std::make_shared<CDoor>();
-			d->closedPos = Vec2(x, y);
-			d->openPos = Vec2(openX, openY);
-			d->savedHalfSize = Vec2(w * 0.5f, h * 0.5f);
+			d->linkTag = tag; // Store "buttonary" here!
 			door->door = d;
 		}
 		else if (type == "Platform") {
@@ -423,6 +421,36 @@ void Game::sUserInput() {
 }
 
 void Game::sInteract() {
+	for (auto& player : entityManager.GetEntities("Player")) {
+		if (!player->transform || !player->boundingBox) { continue; }
+
+		// Did the player press 'E' or 'RShift' this exact frame?
+		if (player->input->interact) {
+			for (auto& door : entityManager.GetEntities("Door")) {
+				if (!door->door || !door->door->isOpen || !door->transform || !door->boundingBox) { continue; }
+
+				float dx = std::abs(player->transform->position.x - door->transform->position.x);
+				float dy = std::abs(player->transform->position.y - door->transform->position.y);
+
+				// If the player is standing on an OPEN door
+				if (dx < player->boundingBox->halfSize.x + door->boundingBox->halfSize.x &&
+					dy < player->boundingBox->halfSize.y + door->boundingBox->halfSize.y) {
+
+					// Find the matching destination door
+					for (auto& targetDoor : entityManager.GetEntities("Door")) {
+						if (targetDoor != door && targetDoor->door->linkTag == door->door->linkTag) {
+
+							// Teleport the player!
+							player->transform->position = targetDoor->transform->position;
+							player->input->interact = false; // Consume the input so they don't teleport back instantly
+							break; // Only teleport once
+						}
+					}
+					break; // Stop checking other doors for this player
+				}
+			}
+		}
+	}
 	for (auto& button : entityManager.GetEntities("Button")) {
 		if (!button->interactable || !button->boundingBox || !button->transform) { continue; }
 
@@ -482,16 +510,25 @@ void Game::sInteract() {
 				inter->isPressed = true;
 			}
 		}
-
+			
 		// 3. Trigger linked entities (Doors, Platforms)
 		if (inter->isPressed != wasPressed) {
-
 			buttonSound.play();
 
 			for (auto& ent : entityManager.GetEntities()) {
-				if (ent->GetTag() == inter->linkedTag) {
-					if (ent->door) { ent->door->isOpen = inter->isPressed; }
-					if (ent->movingPlatform) { ent->movingPlatform->triggered = inter->isPressed; }
+				// Moving Platforms (still use standard Tags)
+				if (ent->movingPlatform && ent->GetTag() == inter->linkedTag) {
+					ent->movingPlatform->triggered = inter->isPressed;
+				}
+
+				// Doors (Now check their internal linkTag!)
+				if (ent->door && ent->door->linkTag == inter->linkedTag) {
+					ent->door->isOpen = inter->isPressed;
+
+					// Change color based on state (Dark portal vs Brown wood)
+					ent->sprite->getShape().setFillColor(
+						ent->door->isOpen ? sf::Color(20, 20, 20) : sf::Color(80, 60, 40)
+					);
 				}
 			}
 		}
@@ -703,12 +740,9 @@ void Game::sCollision() {
 			solidEntities.push_back(tile);
 		}
 
-		// 2. Grab all dynamic geometry (Platforms and Closed Doors)
+		// 2. Grab all dynamic geometry (Platforms)
 		for (auto& ent : entityManager.GetEntities()) {
 			if (ent->movingPlatform) {
-				solidEntities.push_back(ent);
-			}
-			else if (ent->door && !ent->door->isOpen) { // Only collide if the door is closed!
 				solidEntities.push_back(ent);
 			}
 		}

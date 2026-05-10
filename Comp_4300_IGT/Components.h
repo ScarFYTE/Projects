@@ -112,11 +112,10 @@ public:
 
 class CDoor {
 public:
+	std::string linktag;
 	bool isOpen = false;
-	Vec2 openPos;
-	Vec2 closedPos;
-	float speed = 3.0f;
-	Vec2 savedHalfSize;
+
+	CDoor() {}
 };
 
 class CMovingPlatform {
