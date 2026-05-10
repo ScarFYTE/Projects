@@ -416,10 +416,10 @@ void Game::sInteract() {
 				anyOverlap = true;
 
 				// Direct check for "Holding" the key down continuously
-				if (player->GetTag() == "Player1" && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::E)) {
+				if (player->GetTag() == player1 && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::E)) {
 					isHoldingInteract = true;
 				}
-				if (player->GetTag() == "Player2" && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RShift)) {
+				if (player->GetTag() == player2 && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RShift)) {
 					isHoldingInteract = true;
 				}
 
