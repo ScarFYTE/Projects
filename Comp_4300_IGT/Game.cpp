@@ -374,7 +374,10 @@ void Game::sUserInput() {
 					// Full restart — reload config and respawn players
 					PopMusic();
 					entityManager = EntityManager();
-					loadConfig("config.txt");
+					
+					loadConfig(currentLevelPath);
+
+
 					spawnPlayers();
 					entityManager.Update();
 					gameView = window.getDefaultView();
@@ -1072,6 +1075,8 @@ void Game::StartRespawn(Vec2 focusPoint) {
 	State = GameState::RespawnFadeOut;
 	transitionCenter = focusPoint;  // Center the wipe on the player who died
 	transitionRadius = 3000.0f;     // Start massive to cover the zoomed-out camera
+
+	isLoadingNextLevel = false;     // We are respawning, not advancing the level
 }
 
 void Game::ApplyReset() {
