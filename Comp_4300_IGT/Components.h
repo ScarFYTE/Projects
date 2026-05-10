@@ -97,6 +97,7 @@ public:
 	string linkedTag;       // tag of the entity this triggers
 	bool isPressed = false;
 	bool requiresStay = true; // true = pressure plate, false = one-shot lever
+	bool requiresInput = false; // NEW: true = needs key press, false = activates on overlap
 };
 
 class CDoor {

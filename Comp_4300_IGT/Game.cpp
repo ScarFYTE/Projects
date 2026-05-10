@@ -31,8 +31,19 @@ void Game::init() {
 // Load Config
 void Game::loadConfig(const std::string& path) {
 	std::ifstream file(path);
+	if (!file.is_open()) {
+		std::cerr << "Could not open config: " << path << std::endl;
+		return;
+	}
 	std::string type;
 	while (file >> type) {
+		if (type[0] == '#') {
+			// Comment line — consume the rest
+			std::string dummy;
+			std::getline(file, dummy);
+			continue;
+		}
+
 		if (type == "Tile") {
 			float x, y, w, h;
 			file >> x >> y >> w >> h;
@@ -40,6 +51,119 @@ void Game::loadConfig(const std::string& path) {
 			tile->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
 			tile->boundingBox = std::make_shared<CBoundingBox>(w, h);
 			tile->sprite = std::make_shared<CSprite>(w, h, sf::Color(100, 80, 60));
+
+		}
+		else if (type == "Spawn") {
+			float p1x, p1y, p2x, p2y;
+			file >> p1x >> p1y >> p2x >> p2y;
+			P1_SPAWN = Vec2(p1x, p1y);
+			P2_SPAWN = Vec2(p2x, p2y);
+
+		}
+		else if (type == "Enemy") {
+			float x, y, wp1x, wp1y, wp2x, wp2y, speed, sightRange, sightAngle;
+			file >> x >> y >> wp1x >> wp1y >> wp2x >> wp2y >> speed >> sightRange >> sightAngle;
+
+			auto enemy = entityManager.AddEntity("Enemy");
+			enemy->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
+			enemy->boundingBox = std::make_shared<CBoundingBox>(40.0f, 48.0f);
+			enemy->sprite = std::make_shared<CSprite>(40.0f, 48.0f, sf::Color(220, 120, 0));
+
+			auto patrol = std::make_shared<CPatrol>();
+			patrol->waypoints.push_back(Vec2(wp1x, wp1y));
+			patrol->waypoints.push_back(Vec2(wp2x, wp2y));
+			patrol->speed = speed;
+			enemy->patrol = patrol;
+
+			auto sight = std::make_shared<CSight>();
+			sight->range = sightRange;
+			sight->halfAngleDeg = sightAngle;
+			enemy->sight = sight;
+
+		}
+		else if (type == "Button") {
+			float x, y, w, h;
+			std::string linkedTag;
+			int requiresStay, requiresInput; // Updated to include requiresInput
+			file >> x >> y >> w >> h >> linkedTag >> requiresStay >> requiresInput;
+
+			auto button = entityManager.AddEntity("Button");
+			button->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
+			button->boundingBox = std::make_shared<CBoundingBox>(w, h);
+			button->sprite = std::make_shared<CSprite>(w, h, sf::Color(200, 100, 0));
+
+			auto inter = std::make_shared<CInteractable>();
+			inter->linkedTag = linkedTag;
+			inter->requiresStay = (requiresStay != 0);
+			inter->requiresInput = (requiresInput != 0); // Apply the new setting
+			button->interactable = inter;
+
+		}
+		else if (type == "Door") {
+			std::string tag;
+			float x, y, w, h, openX, openY;
+			file >> tag >> x >> y >> w >> h >> openX >> openY;
+
+			auto door = entityManager.AddEntity(tag);
+			door->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
+			door->boundingBox = std::make_shared<CBoundingBox>(w, h);
+			door->sprite = std::make_shared<CSprite>(w, h, sf::Color(80, 60, 40));
+
+			auto d = std::make_shared<CDoor>();
+			d->closedPos = Vec2(x, y);
+			d->openPos = Vec2(openX, openY);
+			d->savedHalfSize = Vec2(w * 0.5f, h * 0.5f);
+			door->door = d;
+
+		}
+		else if (type == "Platform") {
+			std::string tag;
+			float x, y, w, h, targetX, targetY, speed;
+			std::string linkedTag;
+			file >> tag >> x >> y >> w >> h >> targetX >> targetY >> speed >> linkedTag;
+
+			auto plat = entityManager.AddEntity(tag);
+			plat->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
+			plat->boundingBox = std::make_shared<CBoundingBox>(w, h);
+			plat->sprite = std::make_shared<CSprite>(w, h, sf::Color(60, 100, 160));
+
+			auto mp = std::make_shared<CMovingPlatform>();
+			mp->posA = Vec2(x, y);
+			mp->posB = Vec2(targetX, targetY);
+			mp->speed = speed;
+			plat->movingPlatform = mp;
+
+		}
+		else if (type == "Checkpoint") {
+			float x, y, p1sx, p1sy, p2sx, p2sy;
+			file >> x >> y >> p1sx >> p1sy >> p2sx >> p2sy;
+
+			auto cp = entityManager.AddEntity("Checkpoint");
+			cp->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
+			cp->boundingBox = std::make_shared<CBoundingBox>(32.0f, 32.0f);
+			cp->sprite = std::make_shared<CSprite>(32.0f, 32.0f, sf::Color(0, 180, 255));
+
+			auto c = std::make_shared<CCheckpoint>();
+			c->p1Spawn = Vec2(p1sx, p1sy);
+			c->p2Spawn = Vec2(p2sx, p2sy);
+			cp->checkpoint = c;
+
+		}
+		else if (type == "Exit") {
+			float x, y, w, h;
+			file >> x >> y >> w >> h;
+
+			auto exit = entityManager.AddEntity("Exit");
+			exit->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
+			exit->boundingBox = std::make_shared<CBoundingBox>(w, h);
+			exit->sprite = std::make_shared<CSprite>(w, h, sf::Color(255, 220, 0));
+			exit->exit_ = std::make_shared<CExit>();
+
+		}
+		else {
+			// Unknown token — skip line
+			std::string dummy;
+			std::getline(file, dummy);
 		}
 	}
 }
@@ -172,10 +296,12 @@ void Game::sUserInput() {
 			case sf::Keyboard::Key::W: player1->input->jump = true; break;
 			case sf::Keyboard::Key::A: player1->input->left = true; break;
 			case sf::Keyboard::Key::D: player1->input->right = true; break;
+			case sf::Keyboard::Key::E: player1->input->interact = true; break;
 
 			case sf::Keyboard::Key::Up: player2->input->jump = true; break;
 			case sf::Keyboard::Key::Left:  player2->input->left = true; break;
 			case sf::Keyboard::Key::Right: player2->input->right = true; break;
+			case sf::Keyboard::Key::RShift: player2->input->interact = true; break;
 
 			default: break;
 			}
@@ -186,9 +312,12 @@ void Game::sUserInput() {
 			case sf::Keyboard::Key::A: player1->input->left = false; break;
 			case sf::Keyboard::Key::D: player1->input->right = false; break;
 			case sf::Keyboard::Key::W: player1->input->jump = false; break;
+			case sf::Keyboard::Ket::E: player1->input->interact = false; break;
+
 			case sf::Keyboard::Key::Left:  player2->input->left = false; break;
 			case sf::Keyboard::Key::Right: player2->input->right = false; break;
 			case sf::Keyboard::Key::Up: player2->input->jump = false; break;
+			case sf::Keyboard::Key::RShift: player2->input->interact = false; break;
 
 			default: break;
 			}
@@ -428,6 +557,72 @@ void Game::sParticle() {
 		e->sprite->getShape().setFillColor(c);
 	}
 }
+
+void Game::sInteract() {
+	for (auto& button : entityManager.GetEntities("Button")) {
+		if (!button->interactable || !button->boundingBox || !button->transform) { continue; }
+
+		auto& inter = button->interactable;
+
+		bool anyOverlap = false;
+		bool interactPressed = false;
+
+		// 1. Check for overlap and input
+		for (auto& player : entityManager.GetEntities("Player")) {
+			if (!player->transform || !player->boundingBox) { continue; }
+
+			float dx = std::abs(player->transform->position.x - button->transform->position.x);
+			float dy = std::abs(player->transform->position.y - button->transform->position.y);
+
+			if (dx < player->boundingBox->halfSize.x + button->boundingBox->halfSize.x &&
+				dy < player->boundingBox->halfSize.y + button->boundingBox->halfSize.y) {
+
+				anyOverlap = true;
+				if (player->input->interact) {
+					interactPressed = true;
+					player->input->interact = false; // Consume input to prevent rapid toggling
+				}
+			}
+		}
+
+		bool wasPressed = inter->isPressed;
+
+		// 2. Handle state changes based on interaction type
+		if (inter->requiresInput) {
+			// LEVER BEHAVIOUR: Toggle on key press
+			if (anyOverlap && interactPressed) {
+				inter->isPressed = !inter->isPressed;
+			}
+		}
+		else {
+			// PRESSURE PLATE BEHAVIOUR: Activate on overlap
+			if (anyOverlap && !inter->isPressed) {
+				inter->isPressed = true;
+			}
+			else if (!anyOverlap && inter->requiresStay && inter->isPressed) {
+				inter->isPressed = false;
+			}
+		}
+
+		// 3. Trigger linked entities (Doors, Platforms)
+		if (inter->isPressed != wasPressed) {
+			for (auto& ent : entityManager.GetEntities()) {
+				if (ent->GetTag() == inter->linkedTag) {
+					if (ent->door) { ent->door->isOpen = inter->isPressed; }
+					if (ent->movingPlatform) { ent->movingPlatform->triggered = inter->isPressed; }
+				}
+			}
+		}
+
+		// 4. Visual Feedback
+		if (button->sprite) {
+			button->sprite->getShape().setFillColor(
+				inter->isPressed ? sf::Color(0, 200, 100) : sf::Color(200, 100, 0)
+			);
+		}
+	}
+}
+
 
 void Game::sHealth() {
 	for (auto& e : entityManager.GetEntities("Player")) {

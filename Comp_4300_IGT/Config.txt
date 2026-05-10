@@ -38,6 +38,9 @@ Tile 1070 270 160 24
 Tile 340 180 128 24
 Tile 576 150 128 24
 Tile 810 180 128 24
+# === BUTTONS AND LEVERS === 
+Button 700 684 32 32 Elevator1 0 1
+Platform Elevator1 900 650 100 20 900 200 2.5 Elevator1
 
 # === KILL ZONES (narrow ledges that punish bad landings) ===
 Tile 230 600 64 24
