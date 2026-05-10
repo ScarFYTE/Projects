@@ -2,7 +2,7 @@
 #include "EntityManager.h"
 #include "Entity.h"
 #include <SFML/Graphics.hpp>
-
+#include <SFML/Audio.hpp>
 enum class GameState {
 	StartMenu,
 	Playing,
