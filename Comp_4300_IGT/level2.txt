@@ -6,6 +6,7 @@
 # --- ENTITIES (From Layer: entities) ---
 Spawn 17.0 446.0 57.0 446.0
 Platform disco 960.0 612.0 64 8 780 384 2.5 disco
+Button 708.0 368.0 8 32 disco 1 1
 # --- TILES (From Layer: solidgeometry) ---
 Tile 704.0 400.0 128 32 Grass
 Tile 704.0 432.0 128 32 Dirt
