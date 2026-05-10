@@ -62,12 +62,18 @@ void Game::loadConfig(const std::string& path) {
 
 		if (type == "Tile") {
 			float x, y, w, h;
-			file >> x >> y >> w >> h;
+			std::string texName; // NEW: Holds the file name
+
+			// NEW: Notice we added texName to the end!
+			file >> x >> y >> w >> h >> texName;
+
 			auto tile = entityManager.AddEntity("Tile");
 			tile->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
 			tile->boundingBox = std::make_shared<CBoundingBox>(w, h);
-			tile->sprite = std::make_shared<CSprite>(w, h, sf::Color(100, 80, 60));
+			tile->sprite = std::make_shared<CSprite>(w, h, sf::Color::White);
 
+			// NEW: Load the texture and pass 'true' so it repeats seamlessly
+			tile->sprite->loadTexture(texName, true);
 		}
 		else if (type == "Spawn") {
 			float p1x, p1y, p2x, p2y;

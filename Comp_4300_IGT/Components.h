@@ -53,8 +53,15 @@ public:
 		rect.setOrigin({ w * 0.5f, h * 0.5f });
 	}
 
-	bool loadTexture(const std::string& path) {
+	bool loadTexture(const std::string& path, bool repeat = false) {
 		if (!texture.loadFromFile(path)) { return false; }
+
+		if (repeat) {
+			texture.setRepeated(true);
+			// Tell the texture to tile across the entire size of the shape
+			rect.setTextureRect(sf::IntRect(0, 0, static_cast<int>(rect.getSize().x), static_cast<int>(rect.getSize().y)));
+		}
+
 		rect.setTexture(&texture);
 		return true;
 	}
