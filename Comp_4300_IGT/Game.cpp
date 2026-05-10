@@ -713,24 +713,6 @@ void Game::sCollision() {
 		const float hw = e->boundingBox->halfSize.x;
 		const float hh = e->boundingBox->halfSize.y;
 
-		// Ceiling
-		if (e->transform->position.y - hh < 0.0f) {
-			e->transform->position.y = hh;
-			e->transform->velocity.y = 0.0f;
-		}
-
-		// Left wall
-		if (e->transform->position.x - hw < 0.0f) {
-			e->transform->position.x = hw;
-			e->transform->velocity.x = 0.0f;
-		}
-
-		// Right wall
-		if (e->transform->position.x + hw > wf) {
-			e->transform->position.x = wf - hw;
-			e->transform->velocity.x = 0.0f;
-		}
-
 		//Tiles
 		// --- SOLID GEOMETRY COLLISION ---
 		std::vector<std::shared_ptr<Entity>> solidEntities;
