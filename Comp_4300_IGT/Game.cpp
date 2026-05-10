@@ -12,7 +12,6 @@ Game::Game() {
 
 void Game::init() {
 
-	PushMusic("menu.ogg");
 	//levelQueue.enqueue("level1.txt");
 	levelQueue.enqueue("Level2.txt");
 	levelQueue.enqueue("Level3.txt");
@@ -43,6 +42,9 @@ void Game::init() {
 	// Flush the spawn queue before the first frame
 	entityManager.Update();
 	gameView = window.getDefaultView();
+
+
+	PushMusic("menu.ogg");
 }
 
 
@@ -343,6 +345,8 @@ void Game::sUserInput() {
 					kp->code == sf::Keyboard::Key::Space) {
 					if (SelectedOption == 0) {
 						State = GameState::Playing;
+
+						PushMusic("menu.ogg");
 					}
 					else {
 						Running = false;
@@ -365,6 +369,8 @@ void Game::sUserInput() {
 				if (kp->code == sf::Keyboard::Key::Escape) {
 					State = GameState::StartMenu;
 					SelectedOption = 0;
+
+					PushMusic("menu.ogg");
 				}
 				return;
 			}
@@ -1072,6 +1078,8 @@ void Game::LoadNextLevel() {
 	// 1. Check if we beat the last level
 	if (levelQueue.isEmpty()) {
 		State = GameState::StartMenu;
+
+		PushMusic("menu.ogg");
 		return;
 	}
 
