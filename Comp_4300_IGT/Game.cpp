@@ -1261,10 +1261,15 @@ sf::Texture& Game::getTexture(const std::string& name) {
 		std::cerr << "!!! ERROR: Could not find " << path << " !!!" << std::endl;
 
 		// CREATE A PINK FALLBACK
-		// If the file is missing, we make a 2x2 pink texture in memory
+		// SFML 3 Fix #1: Use 'resize' instead of 'create'
 		sf::Image pinkImage;
-		pinkImage.create({ 2, 2 }, sf::Color::Magenta);
-		textureCache[name].loadFromImage(pinkImage);
+		pinkImage.resize({ 2, 2 }, sf::Color::Magenta);
+
+		// SFML 3 Fix #2: We must store the true/false result to satisfy [[nodiscard]]
+		bool fallbackLoaded = textureCache[name].loadFromImage(pinkImage);
+		if (!fallbackLoaded) {
+			std::cerr << "Failed to generate fallback texture!" << std::endl;
+		}
 	}
 
 	textureCache[name].setSmooth(false);
