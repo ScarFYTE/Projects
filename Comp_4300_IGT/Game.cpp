@@ -809,20 +809,60 @@ void Game::sCollision() {
 			}
 		}
 		// --- END SOLID GEOMETRY COLLISION ---
+		// --- PLAYER vs PLAYER COLLISION ---
 		for (auto& Other : entityManager.GetEntities("Player")) {
-			if (Other == e || !Other->transform || !Other->boundingBox) { continue; }
+
+			// 1. THE ANTI-FIGHTING LOCK
+			// By comparing memory addresses, we ensure P1 checks P2, but P2 skips P1. 
+			// This prevents them from calculating the collision twice and fighting!
+			if (e.get() >= Other.get()) { continue; }
+
+			if (!Other->transform || !Other->boundingBox) { continue; }
+
+			const float hw = e->boundingBox->halfSize.x;
+			const float hh = e->boundingBox->halfSize.y;
 			const float otherHW = Other->boundingBox->halfSize.x;
 			const float otherHH = Other->boundingBox->halfSize.y;
-			const float otherX = Other->transform->position.x;
-			const float otherY = Other->transform->position.y;
-			if (std::abs(e->transform->position.x - otherX) < hw + otherHW &&
-				std::abs(e->transform->position.y - otherY) < hh + otherHH) {
 
-				float overlapX = (hw + otherHW) - std::abs(e->transform->position.x - otherX);
-				float overlapY = (hh + otherHH) - std::abs(e->transform->position.y - otherY);
-				if (overlapX < overlapY) {
-					// horizontal collision
-					if (e->transform->position.x < otherX) {
+			float dx = e->transform->position.x - Other->transform->position.x;
+			float dy = e->transform->position.y - Other->transform->position.y;
+
+			if (std::abs(dx) < hw + otherHW && std::abs(dy) < hh + otherHH) {
+				float overlapX = (hw + otherHW) - std::abs(dx);
+				float overlapY = (hh + otherHH) - std::abs(dy);
+
+				// 2. THE EDGE-JITTER FIX (+8.0f Bias)
+				// By adding 8 pixels to overlapX, we force the engine to treat 
+				// edge-cases as vertical floors, stopping the players from sliding off!
+				if (overlapY < overlapX + 8.0f) {
+
+					// --- VERTICAL COLLISION (Someone is on top) ---
+					if (dy < 0.0f) {
+						// 'e' is ABOVE 'Other'
+						e->transform->position.y -= overlapY;
+						e->transform->onGround = true;
+
+						// If the bottom player jumps, the top player inherits their upward momentum!
+						e->transform->velocity.y = (Other->transform->velocity.y < 0.0f) ? Other->transform->velocity.y : 0.0f;
+
+						// CARRY MECHANIC: Shift the top player horizontally by the bottom player's speed
+						e->transform->position.x += Other->transform->velocity.x;
+
+					}
+					else {
+						// 'Other' is ABOVE 'e'
+						Other->transform->position.y -= overlapY;
+						Other->transform->onGround = true;
+
+						Other->transform->velocity.y = (e->transform->velocity.y < 0.0f) ? e->transform->velocity.y : 0.0f;
+						Other->transform->position.x += e->transform->velocity.x;
+					}
+
+				}
+				else {
+
+					// --- HORIZONTAL COLLISION (Bumping shoulders) ---
+					if (dx < 0.0f) {
 						e->transform->position.x -= overlapX * 0.5f;
 						Other->transform->position.x += overlapX * 0.5f;
 					}
@@ -830,24 +870,14 @@ void Game::sCollision() {
 						e->transform->position.x += overlapX * 0.5f;
 						Other->transform->position.x -= overlapX * 0.5f;
 					}
-					e->transform->velocity.x = 0.0f;
-					Other->transform->velocity.x = 0.0f;
-				}
-				else {
-					// vertical collision
-					if (e->transform->position.y < otherY) {
-						e->transform->position.y -= overlapY;\
-							e->transform->onGround = true; // Player is on top of the other player
-						e->transform->velocity -= Other->transform->velocity / 2;
-					}
-					else {
-						Other->transform->position.y -= overlapY;
-						Other->transform->onGround = true;// Other is on top of the s
-						Other->transform->velocity -= e->transform->velocity / 2;
-					}
+
+					// Cut speed so they don't endlessly push into each other
+					e->transform->velocity.x *= 0.5f;
+					Other->transform->velocity.x *= 0.5f;
 				}
 			}
 		}
+		// --- END PLAYER vs PLAYER ---}
 	}
 }
 void Game::sParticle() {
