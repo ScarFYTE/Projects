@@ -1,8 +1,6 @@
 #pragma once
 #include"Vec2.h"
 #include <SFML/Graphics.hpp>
-#include <vector>
-#include <string>
 
 class CTransform {
 public:
@@ -78,105 +76,18 @@ public:
 	CInput() {}
 };
 
-// Simplified health — lives removed; only spawn anchor and brief dead flag used during reset flash
 class CHealth {
 public:
+	int   maxLives;
+	int   lives;
 	bool  isDead = false;
-	Vec2  spawnPoint;
+	int   respawnTimer = 0;     // counts down in frames
+	Vec2  spawnPoint;          
 
-	CHealth() : spawnPoint(0, 0) {}
-	CHealth(Vec2 spawnPoint) : spawnPoint(spawnPoint) {}
-};
+	CHealth(int lives, Vec2 spawnPoint)
+		: maxLives(lives), lives(lives), spawnPoint(spawnPoint) {
+	}
+	CHealth() :maxLives(5), lives(5), spawnPoint(250, 250) {}
 
-// Enemy patrol between waypoints
-class CPatrol {
-public:
-	std::vector<Vec2> waypoints;
-	int   currentTarget = 0;
-	float speed         = 1.5f;
-	bool  facingRight   = true;
-};
-
-// Enemy detection cone
-class CSight {
-public:
-	float range        = 180.0f;
-	float halfAngleDeg = 35.0f;
-};
-
-// Button / pressure plate that triggers another entity by tag
-class CInteractable {
-public:
-	std::string linkedTag;
-	bool        isPressed    = false;
-	bool        requiresStay = true; // true = pressure plate, false = one-shot lever
-	bool		requiresInput = false 
-};
-
-// Sliding door that moves between open and closed positions
-class CDoor {
-public:
-	bool  isOpen    = false;
-	Vec2  openPos;
-	Vec2  closedPos;
-	float speed     = 3.0f;
-	Vec2  savedHalfSize; // stored so the bounding box can be restored when closed
-};
-
-// Platform that moves between two positions when triggered
-class CMovingPlatform {
-public:
-	Vec2  posA;
-	Vec2  posB;
-	bool  triggered = false;
-	float speed     = 2.0f;
-};
-
-// Checkpoint that stores spawn positions for both players
-class CCheckpoint {
-public:
-	bool activated = false;
-	Vec2 p1Spawn;
-	Vec2 p2Spawn;
-};
-
-// Exit zone — win when both players are inside
-class CExit {
-public:
-	int playersInside = 0;
-};
-
-class CInteractable {
-public:
-	string linkedTag;       // tag of the entity this triggers
-	bool isPressed = false;
-	bool requiresStay = true; // true = pressure plate, false = one-shot lever
-};
-
-class CDoor {
-public:
-	bool isOpen = false;
-	Vec2 openPos;
-	Vec2 closedPos;
-	float speed = 3.0f;
-};
-
-class CMovingPlatform {
-public:
-	Vec2 posA;
-	Vec2 posB;
-	bool triggered = false;
-	float speed = 2.0f;
-};
-
-class CExit {
-public:
-	int playersInside = 0;
-};
-
-class CCheckpoint {
-public:
-	bool activated = false;
-	Vec2 p1Spawn;
-	Vec2 p2Spawn;
+	bool isRespawning() const { return isDead && respawnTimer > 0; }
 };
