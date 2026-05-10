@@ -678,14 +678,26 @@ void Game::sMovement() {
 
 		bool canJump = t->onGround || t->coyoteFrames > 0;
 		if (t->JumpBufferFrames > 0 && canJump) {
-			t->velocity.y = JUMP_VELOCITY;
+
+			// --- THE JUMP BOOST UPGRADE ---
+			if (t->velocity.y < 0.0f) {
+				// If you are already being carried UPWARDS by a player or moving platform,
+				// we ADD the jump force so you actually launch off of them!
+				t->velocity.y += JUMP_VELOCITY;
+			}
+			else {
+				// Normal jump from flat ground or when falling
+				t->velocity.y = JUMP_VELOCITY;
+			}
+			// ------------------------------
+
 			t->onGround = false;
 			t->coyoteFrames = 0;
 			t->JumpBufferFrames = 0;
+
 			spawnDustParticles(
 				Vec2(t->position.x, t->position.y + e->boundingBox->halfSize.y), 8
 			);
-
 
 			jumpSound.play();
 		}
