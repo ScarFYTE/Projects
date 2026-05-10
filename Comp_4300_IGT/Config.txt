@@ -65,6 +65,10 @@ Button 900 516 32 16 plat-A 1
 # Door: tag x y width height openX openY
 Door gate-A 340 156 24 120 340 0
 
+# === BUTTONS AND LEVERS/ELEVATORS ===
+Button 700 684 32 32 Elevator1 0 1
+Platform Elevator1 900 650 100 20 900 200 2.5 Elevator1
+
 # Moving platform: tag x y width height targetX targetY speed linkedTag(unused,reserved)
 Platform plat-A 640 460 128 24 640 300 2.0 none
 

@@ -74,6 +74,7 @@ public:
 	bool left    = false;
 	bool right   = false;
 	bool jump	 = false;
+	bool interact = false;	
 	CInput() {}
 };
 
@@ -109,6 +110,7 @@ public:
 	std::string linkedTag;
 	bool        isPressed    = false;
 	bool        requiresStay = true; // true = pressure plate, false = one-shot lever
+	bool		requiresInput = false 
 };
 
 // Sliding door that moves between open and closed positions
@@ -142,4 +144,39 @@ public:
 class CExit {
 public:
 	int playersInside = 0;
+};
+
+class CInteractable {
+public:
+	string linkedTag;       // tag of the entity this triggers
+	bool isPressed = false;
+	bool requiresStay = true; // true = pressure plate, false = one-shot lever
+};
+
+class CDoor {
+public:
+	bool isOpen = false;
+	Vec2 openPos;
+	Vec2 closedPos;
+	float speed = 3.0f;
+};
+
+class CMovingPlatform {
+public:
+	Vec2 posA;
+	Vec2 posB;
+	bool triggered = false;
+	float speed = 2.0f;
+};
+
+class CExit {
+public:
+	int playersInside = 0;
+};
+
+class CCheckpoint {
+public:
+	bool activated = false;
+	Vec2 p1Spawn;
+	Vec2 p2Spawn;
 };

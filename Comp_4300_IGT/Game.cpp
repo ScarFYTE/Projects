@@ -78,15 +78,15 @@ void Game::loadConfig(const std::string& path) {
 			enemy->patrol = patrol;
 
 			auto sight = std::make_shared<CSight>();
-			sight->range        = sightRange;
+			sight->range        = sightRange;	
 			sight->halfAngleDeg = sightAngle;
 			enemy->sight = sight;
 
 		} else if (type == "Button") {
 			float x, y, w, h;
 			std::string linkedTag;
-			int requiresStay;
-			file >> x >> y >> w >> h >> linkedTag >> requiresStay;
+			int requiresStay, requiresInput;
+			file >> x >> y >> w >> h >> linkedTag >> requiresStay >> requiresInput	;
 
 			auto button = entityManager.AddEntity("Button");
 			button->transform    = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
@@ -96,6 +96,7 @@ void Game::loadConfig(const std::string& path) {
 			auto inter = std::make_shared<CInteractable>();
 			inter->linkedTag    = linkedTag;
 			inter->requiresStay = (requiresStay != 0);
+			inter->requiresInput = (requiresInput != 0)
 			button->interactable = inter;
 
 		} else if (type == "Door") {
@@ -268,10 +269,12 @@ void Game::sUserInput() {
 			case sf::Keyboard::W:     player1->input->jump  = true; break;
 			case sf::Keyboard::A:     player1->input->left  = true; break;
 			case sf::Keyboard::D:     player1->input->right = true; break;
+			case sf::Keyboard::E:     player1->input->interact = true; break;
 
 			case sf::Keyboard::Up:    player2->input->jump  = true; break;
 			case sf::Keyboard::Left:  player2->input->left  = true; break;
 			case sf::Keyboard::Right: player2->input->right = true; break;
+			case sf::Keyboard::RShift: player2->input->interact = true; break;
 
 			default: break;
 			}
@@ -282,10 +285,12 @@ void Game::sUserInput() {
 			case sf::Keyboard::A:     player1->input->left  = false; break;
 			case sf::Keyboard::D:     player1->input->right = false; break;
 			case sf::Keyboard::W:     player1->input->jump  = false; break;
+			case sf::Keyboard::E:     player1->input->interact = false; break;
 
 			case sf::Keyboard::Left:  player2->input->left  = false; break;
 			case sf::Keyboard::Right: player2->input->right = false; break;
 			case sf::Keyboard::Up:    player2->input->jump  = false; break;
+			case sf::Keyboard::RShift: player2->input->interact = false; break;
 
 			default: break;
 			}
@@ -435,6 +440,8 @@ void Game::sInteract() {
 
 		// Check if either player overlaps the button
 		bool anyOverlap = false;
+		bool interactPressed = false;
+
 		for (auto& player : entityManager.GetEntities("Player")) {
 			if (!player->transform || !player->boundingBox) { continue; }
 			float dx = std::abs(player->transform->position.x - button->transform->position.x);
@@ -442,12 +449,21 @@ void Game::sInteract() {
 			if (dx < player->boundingBox->halfSize.x + button->boundingBox->halfSize.x &&
 				dy < player->boundingBox->halfSize.y + button->boundingBox->halfSize.y) {
 				anyOverlap = true;
+				if (player->input->interact) {
+					interactPressed = true;
+					player->input->interact = false;
 				break;
 			}
 		}
 
 		bool wasPressed = inter->isPressed;
 
+		if (inter->requiresInput) {
+			// LEVER BEHAVIOUR: Toggle on key press
+			if (anyOverlap && interactPressed) {
+				inter->isPressed = !inter->isPressed;
+			}
+		} else {
 		if (anyOverlap && !inter->isPressed) {
 			inter->isPressed = true;
 		} else if (!anyOverlap && inter->requiresStay && inter->isPressed) {
