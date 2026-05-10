@@ -58,8 +58,11 @@ public:
 
 		if (repeat) {
 			texture.setRepeated(true);
-			// Tell the texture to tile across the entire size of the shape
-			rect.setTextureRect(sf::IntRect(0, 0, static_cast<int>(rect.getSize().x), static_cast<int>(rect.getSize().y)));
+			// SFML 3 requires {position}, {size} instead of x, y, w, h
+			rect.setTextureRect(sf::IntRect(
+				{ 0, 0 },
+				{ static_cast<int>(rect.getSize().x), static_cast<int>(rect.getSize().y) }
+			));
 		}
 
 		rect.setTexture(&texture);

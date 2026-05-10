@@ -67,12 +67,12 @@ class Game {
 	static constexpr unsigned int WINDOW_HEIGHT = 720;
 	static constexpr float GRAVITY        =  0.5f;
 	static constexpr float MAX_FALL_SPEED =  15.0f;
-	static constexpr float JUMP_VELOCITY  = -9.0f;
-	static constexpr float MOVE_SPEED     =  5.0f;
-	static constexpr float PLAYER_W       =  50.0f;
-	static constexpr float PLAYER_H       =  50.0f;
+	static constexpr float JUMP_VELOCITY  = -8.0f;
+	static constexpr float MOVE_SPEED     =  1.5f;
+	static constexpr float PLAYER_W       =  24.0f;
+	static constexpr float PLAYER_H       =  24.0f;
 	static constexpr float GROUND_H       =  20.0f;
-	static constexpr float ACCELERATION = 1.2f;  // speed gained per frame
+	static constexpr float ACCELERATION = 0.8f;  // speed gained per frame
 	static constexpr float FRICTION = 0.75f; // multiplier when no input (0-1, lower = more friction)
 	static constexpr float TURN_FRICTION = 0.55f; // multiplier on direction change (faster stop)
 	static constexpr float MAX_MOVE_SPEED = 7.0f;  // replaces MOVE_SPEED for horizontal cap

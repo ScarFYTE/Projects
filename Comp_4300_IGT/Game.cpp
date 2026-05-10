@@ -11,7 +11,7 @@ Game::Game() {
 }
 
 void Game::init() {
-	levelQueue.enqueue("config.txt");
+	//levelQueue.enqueue("level1.txt");
 	levelQueue.enqueue("Level2.txt");
 	levelQueue.enqueue("Level3.txt");
 
@@ -286,7 +286,7 @@ void Game::sCamera() {
 
 		float dist = std::sqrt((p2.x - p1.x) * (p2.x - p1.x) +
 			(p2.y - p1.y) * (p2.y - p1.y));
-		float needed = std::max(static_cast<float>(WINDOW_WIDTH), dist * 1.6f);
+		float needed = std::max(static_cast<float>(WINDOW_WIDTH)/2, dist/2 );
 		viewW = needed;
 		viewH = needed * (static_cast<float>(WINDOW_HEIGHT) / WINDOW_WIDTH);
 
