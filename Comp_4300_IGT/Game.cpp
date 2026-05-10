@@ -36,6 +36,20 @@ void Game::init() {
 		std::cerr << "Failed to load Player2hearts.png" << std::endl;
 	}
 
+	if (jumpBuffer.loadFromFile("jump.wav")) {
+		jumpSound.setVolume(50.f);
+	}
+	else {
+		std::cerr << "Failed to load jump.wav" << std::endl;
+	}
+
+	if (buttonBuffer.loadFromFile("button.wav")) {
+		buttonSound.setVolume(80.f);
+	}
+	else {
+		std::cerr << "Failed to load button.wav" << std::endl;
+	}
+
 	window.create(sf::VideoMode({ WINDOW_WIDTH, WINDOW_HEIGHT }), "2D Platformer - 2 Player");
 	window.setFramerateLimit(60);
 	spawnPlayers();
@@ -471,6 +485,8 @@ void Game::sInteract() {
 
 		// 3. Trigger linked entities (Doors, Platforms)
 		if (inter->isPressed != wasPressed) {
+
+			buttonSound.play();
 			for (auto& ent : entityManager.GetEntities()) {
 				if (ent->GetTag() == inter->linkedTag) {
 					if (ent->door) { ent->door->isOpen = inter->isPressed; }
@@ -583,6 +599,7 @@ void Game::sMovement() {
 		if (in->jump) {
 			t->JumpBufferFrames = 8;
 			in->jump = false;
+
 		}
 		if (t->JumpBufferFrames > 0) { t->JumpBufferFrames--; }
 
@@ -595,6 +612,9 @@ void Game::sMovement() {
 			spawnDustParticles(
 				Vec2(t->position.x, t->position.y + e->boundingBox->halfSize.y), 8
 			);
+
+
+			jumpSound.play();
 		}
 
 		// --- Horizontal acceleration ---
