@@ -586,7 +586,7 @@ void Game::RenderStartMenu() {
 
 	title.setCharacterSize(52);
 	title.setFillColor(sf::Color::White);
-	title.setString("2 bhai 2no Tabahi");
+	title.setString("Do bhai dono Tabahi");
 	title.setPosition({ cx - title.getLocalBounds().size.x * 0.5f, cy - 140.f });
 
 	opt0.setCharacterSize(30);
