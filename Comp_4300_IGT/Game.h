@@ -11,6 +11,53 @@ enum class GameState {
 	RespawnFadeIn
 };
 
+// --- CUSTOM LINKED LIST QUEUE ---
+struct LevelNode {
+	std::string levelPath;
+	LevelNode* next;
+	LevelNode(std::string path) : levelPath(path), next(nullptr) {}
+};
+
+class LevelQueue {
+private:
+	LevelNode* frontNode;
+	LevelNode* rearNode;
+
+public:
+	LevelQueue() : frontNode(nullptr), rearNode(nullptr) {}
+
+	~LevelQueue() {
+		while (!isEmpty()) { dequeue(); }
+	}
+
+	void enqueue(const std::string& path) {
+		LevelNode* newNode = new LevelNode(path);
+		if (rearNode == nullptr) {
+			frontNode = rearNode = newNode;
+			return;
+		}
+		rearNode->next = newNode;
+		rearNode = newNode;
+	}
+
+	void dequeue() {
+		if (frontNode == nullptr) return;
+		LevelNode* temp = frontNode;
+		frontNode = frontNode->next;
+		if (frontNode == nullptr) { rearNode = nullptr; }
+		delete temp;
+	}
+
+	std::string front() const {
+		if (frontNode != nullptr) { return frontNode->levelPath; }
+		return "";
+	}
+
+	bool isEmpty() const {
+		return frontNode == nullptr;
+	}
+};
+
 
 class Game {
 	// -----------------------------------------------------------------------
@@ -20,7 +67,7 @@ class Game {
 	static constexpr unsigned int WINDOW_HEIGHT = 720;
 	static constexpr float GRAVITY        =  0.5f;
 	static constexpr float MAX_FALL_SPEED =  15.0f;
-	static constexpr float JUMP_VELOCITY  = -13.0f;
+	static constexpr float JUMP_VELOCITY  = -9.0f;
 	static constexpr float MOVE_SPEED     =  5.0f;
 	static constexpr float PLAYER_W       =  50.0f;
 	static constexpr float PLAYER_H       =  50.0f;
@@ -41,6 +88,13 @@ class Game {
 	// -----------------------------------------------------------------------
 	sf::RenderWindow window;
 	sf::Font font;
+	sf::Texture p1HeartTex; // NEW
+	sf::Texture p2HeartTex; // NEW
+
+	LevelQueue  levelQueue;
+	std::string currentLevelPath;    
+	bool isLoadingNextLevel = false;
+
 	EntityManager    entityManager;
 	bool Running      = true;
 	int  currentFrame = 0;
@@ -72,6 +126,12 @@ class Game {
 	void StartRespawn(Vec2 focusPoint);
 	void ApplyReset();
 	void sTransition();
+
+	//Levels
+	void LoadNextLevel();
+	void sWinCondition();
+	void StartWipe(Vec2 focusPoint, bool advancingLevel = false);
+
 
 	// Systems
 	void sUserInput();

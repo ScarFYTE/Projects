@@ -11,14 +11,30 @@ Game::Game() {
 }
 
 void Game::init() {
-	loadConfig("config.txt");
+	levelQueue.enqueue("config.txt");
+	levelQueue.enqueue("Level2.txt");
+	levelQueue.enqueue("Level3.txt");
 
+	// 2. Dequeue the first level and load it
+	if (!levelQueue.isEmpty()) {
+		currentLevelPath = levelQueue.front();
+		levelQueue.dequeue();
+		loadConfig(currentLevelPath);
+	}
 	if (font.openFromFile("Fonts/Coolvetica Rg.otf")) {
 		std::cout << "Font loed successfully." << std::endl;
 	}
 	else {
 		std::cerr << "Failed to load font ##########." << std::endl;
 	}
+
+	if (!p1HeartTex.loadFromFile("Player1hearts.png")) {
+		std::cerr << "Failed to load Player1hearts.png" << std::endl;
+	}
+	if (!p2HeartTex.loadFromFile("Player2hearts.png")) {
+		std::cerr << "Failed to load Player2hearts.png" << std::endl;
+	}
+
 	window.create(sf::VideoMode({ WINDOW_WIDTH, WINDOW_HEIGHT }), "2D Platformer - 2 Player");
 	window.setFramerateLimit(60);
 	spawnPlayers();
@@ -90,7 +106,7 @@ void Game::loadConfig(const std::string& path) {
 			auto button = entityManager.AddEntity("Button");
 			button->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
 			button->boundingBox = std::make_shared<CBoundingBox>(w, h);
-			button->sprite = std::make_shared<CSprite>(w, h, sf::Color(200, 100, 0));
+			button->sprite = std::make_shared<CSprite>(w, h, sf::Color(0, 0, 255));
 
 			auto inter = std::make_shared<CInteractable>();
 			inter->linkedTag = linkedTag;
@@ -233,6 +249,9 @@ void Game::Run() {
 			sPatrol();
 			sSight();
 			sHealth();
+			sInteract();
+			sMovingPlatform();
+			sWinCondition();
 			sCollision();
 			sCamera();
 		}
@@ -391,6 +410,7 @@ void Game::sInteract() {
 				anyOverlap = true;
 				if (player->input->interact) {
 					interactPressed = true;
+					std::cout << "Interact pressed on button linked to: " << inter->linkedTag << std::endl;
 					player->input->interact = false; // Consume input to prevent rapid toggling
 				}
 			}
@@ -620,21 +640,42 @@ void Game::sCollision() {
 		}
 
 		//Tiles
-		for (auto& Tile : entityManager.GetEntities("Tile")) {
-			if (!Tile->transform || !Tile->boundingBox) { continue; }
-			const float tileHW = Tile->boundingBox->halfSize.x;
-			const float tileHH = Tile->boundingBox->halfSize.y;
-			const float tileX = Tile->transform->position.x;
-			const float tileY = Tile->transform->position.y;
+		// --- SOLID GEOMETRY COLLISION ---
+		std::vector<std::shared_ptr<Entity>> solidEntities;
 
-			if (std::abs(e->transform->position.x - tileX) < hw + tileHW &&
-				std::abs(e->transform->position.y - tileY) < hh + tileHH) {
-				// Simple collision push the player out of the tile
-				float overlapX = (hw + tileHW) - std::abs(e->transform->position.x - tileX);
-				float overlapY = (hh + tileHH) - std::abs(e->transform->position.y - tileY);
+		// 1. Grab all standard static Tiles
+		for (auto& tile : entityManager.GetEntities("Tile")) {
+			solidEntities.push_back(tile);
+		}
+
+		// 2. Grab all dynamic geometry (Platforms and Closed Doors)
+		for (auto& ent : entityManager.GetEntities()) {
+			if (ent->movingPlatform) {
+				solidEntities.push_back(ent);
+			}
+			else if (ent->door && !ent->door->isOpen) { // Only collide if the door is closed!
+				solidEntities.push_back(ent);
+			}
+		}
+
+		// 3. Resolve collisions against all gathered solid objects
+		for (auto& geo : solidEntities) {
+			if (!geo->transform || !geo->boundingBox) { continue; }
+			const float geoHW = geo->boundingBox->halfSize.x;
+			const float geoHH = geo->boundingBox->halfSize.y;
+			const float geoX = geo->transform->position.x;
+			const float geoY = geo->transform->position.y;
+
+			if (std::abs(e->transform->position.x - geoX) < hw + geoHW &&
+				std::abs(e->transform->position.y - geoY) < hh + geoHH) {
+
+				// Simple collision push the player out of the geometry
+				float overlapX = (hw + geoHW) - std::abs(e->transform->position.x - geoX);
+				float overlapY = (hh + geoHH) - std::abs(e->transform->position.y - geoY);
+
 				if (overlapX < overlapY) {
 					// horizontal collision
-					if (e->transform->position.x < tileX) {
+					if (e->transform->position.x < geoX) {
 						e->transform->position.x -= overlapX;
 					}
 					else {
@@ -644,15 +685,14 @@ void Game::sCollision() {
 				}
 				else {
 					// vertical collision
-					if (e->transform->position.y < tileY) {
+					if (e->transform->position.y < geoY) {
 						e->transform->position.y -= overlapY;
 
-						// Only spawn dust if actually falling onto tile (not bonking head)
+						// Only spawn dust if actually falling onto the object (not bonking head)
 						if (!e->transform->onGround && e->transform->velocity.y > 1.0f) {
 							spawnDustParticles(Vec2(e->transform->position.x,
 								e->transform->position.y + e->boundingBox->halfSize.y), 6);
 						}
-
 						e->transform->onGround = true;
 					}
 					else {
@@ -662,6 +702,7 @@ void Game::sCollision() {
 				}
 			}
 		}
+		// --- END SOLID GEOMETRY COLLISION ---
 		for (auto& Other : entityManager.GetEntities("Player")) {
 			if (Other == e || !Other->transform || !Other->boundingBox) { continue; }
 			const float otherHW = Other->boundingBox->halfSize.x;
@@ -749,30 +790,44 @@ void Game::sHealth() {
 }
 
 void Game::RenderHud() {
-
+	// 1. Setup the text for the player labels ("P1:" and "P2:")
 	sf::Text p1Text(font), p2Text(font);
 	p1Text.setCharacterSize(24);
 	p2Text.setCharacterSize(24);
-
 	p1Text.setFillColor(sf::Color::Cyan);
 	p2Text.setFillColor(sf::Color::White);
 
-	// Build lives string: "P1: ♥ ♥ ♥"
-	std::string p1Lives = "P1: ";
+	p1Text.setString("P1:");
+	p2Text.setString("P2:");
+
+	p1Text.setPosition({ 20.f, 20.f });
+	p2Text.setPosition({ 20.f, 60.f }); // Moved P2 down slightly to fit the images
+
+	window.draw(p1Text);
+	window.draw(p2Text);
+
+	// 2. Setup the heart sprites
+	sf::Sprite p1Heart(p1HeartTex);
+	sf::Sprite p2Heart(p2HeartTex);
+
+	p1Heart.setScale({0.05f, 0.05f});
+	p2Heart.setScale({0.05f, 0.05f});
+
+	// How far apart each heart should be spaced (adjust this based on your image size!)
+	float heartSpacing = 40.0f;
+	// How far to the right of the "P1:" text to start drawing hearts
+	float startXOffset = 60.0f;
+
+	// 3. Draw Player 1 Hearts
 	for (int i = 0; i < player1->health->lives; i++) {
-		p1Lives += "<3 ";
+		p1Heart.setPosition({ p1Text.getPosition().x + startXOffset + (i * heartSpacing), 20.f });
+		window.draw(p1Heart);
+	}
 
-		std::string p2Lives = "P2: ";
-		for (int i = 0; i < player2->health->lives; i++) { p2Lives += "<3 "; }
-
-		p1Text.setString(p1Lives);
-		p2Text.setString(p2Lives);
-
-		p1Text.setPosition({ 20.f,  20.f });
-		p2Text.setPosition({ 1000.0f,  20.0f });
-
-		window.draw(p1Text);
-		window.draw(p2Text);
+	// 4. Draw Player 2 Hearts
+	for (int i = 0; i < player2->health->lives; i++) {
+		p2Heart.setPosition({ p2Text.getPosition().x + startXOffset + (i * heartSpacing), 60.f });
+		window.draw(p2Heart);
 	}
 }
 
@@ -956,6 +1011,72 @@ void Game::ApplyReset() {
 	State = GameState::RespawnFadeIn;
 }
 
+
+
+void Game::sWinCondition() {
+	for (auto& exit : entityManager.GetEntities("Exit")) {
+		if (!exit->transform || !exit->boundingBox) { continue; }
+
+		int playersAtExit = 0;
+
+		for (auto& player : entityManager.GetEntities("Player")) {
+			if (!player->transform || !player->boundingBox || player->health->isDead) { continue; }
+
+			float dx = std::abs(player->transform->position.x - exit->transform->position.x);
+			float dy = std::abs(player->transform->position.y - exit->transform->position.y);
+
+			if (dx < player->boundingBox->halfSize.x + exit->boundingBox->halfSize.x &&
+				dy < player->boundingBox->halfSize.y + exit->boundingBox->halfSize.y) {
+				playersAtExit++;
+			}
+		}
+
+		// If BOTH players are touching the exit
+		if (playersAtExit >= 2) {
+			// Trigger the screen wipe, and pass 'true' to signal a level advance
+			StartWipe(exit->transform->position, true);
+		}
+	}
+}
+void Game::LoadNextLevel() {
+	// 1. Check if we beat the last level
+	if (levelQueue.isEmpty()) {
+		State = GameState::StartMenu;
+		return;
+	}
+
+	// 2. Pop the next level from the queue and cache it
+	currentLevelPath = levelQueue.front();
+	levelQueue.dequeue();
+
+	// 3. Wipe all current entities from memory
+	entityManager = EntityManager();
+
+	// 4. Load the new level map
+	loadConfig(currentLevelPath);
+
+	// 5. Respawn the players at the new P1/P2 Spawn coordinates
+	spawnPlayers();
+
+	// 6. Force the entity manager to process the spawns immediately
+	entityManager.Update();
+
+	// 7. Setup the fade-in animation
+	transitionCenter = Vec2((P1_SPAWN.x + P2_SPAWN.x) * 0.5f, (P1_SPAWN.y + P2_SPAWN.y) * 0.5f);
+	State = GameState::RespawnFadeIn;
+}
+
+void Game::StartWipe(Vec2 focusPoint, bool advancingLevel) {
+	if (State == GameState::RespawnFadeOut || State == GameState::RespawnFadeIn) { return; }
+
+	State = GameState::RespawnFadeOut;
+	transitionCenter = focusPoint;
+	transitionRadius = 3000.0f;
+
+	// Store WHY we are wiping the screen
+	isLoadingNextLevel = advancingLevel;
+}
+
 void Game::sTransition() {
 	float fadeSpeed = 70.0f; // Adjust this to make the wipe faster/slower
 
@@ -963,13 +1084,21 @@ void Game::sTransition() {
 		transitionRadius -= fadeSpeed;
 		if (transitionRadius <= 0.0f) {
 			transitionRadius = 0.0f;
-			ApplyReset(); // Screen is fully black, safe to teleport players
+
+			// --- NEW SPLIT LOGIC ---
+			if (isLoadingNextLevel) {
+				LoadNextLevel(); // You hit the exit, advance the queue!
+			}
+			else {
+				ApplyReset();    // You died, just teleport to start!
+			}
+			// -----------------------
 		}
 	}
 	else if (State == GameState::RespawnFadeIn) {
 		transitionRadius += fadeSpeed;
 		if (transitionRadius >= 3000.0f) {
-			State = GameState::Playing; // Transition done, resume gameplay
+			State = GameState::Playing;
 		}
 	}
 }

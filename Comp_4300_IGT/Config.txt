@@ -1,47 +1,16 @@
-# === BOUNDARIES ===
-# Left wall
-Tile -32 400 64 800
-# Right wall  
-Tile 1312 400 64 800
+# ==========================================
+# AUTO-GENERATED CONFIG FROM LDTK
+# ==========================================
 
-# === MAIN FLOOR (pit in the middle) ===
-Tile 192 680 384 64
-Tile 704 680 384 64
 
-# === PIT CROSSING (low stepping stones over the pit) ===
-Tile 430 620 96 24
-Tile 576 580 96 24
-
-# === LEFT SIDE PLATFORMS ===
-# Low shelf
-Tile 100 540 160 24
-# Mid platform
-Tile 80 400 192 24
-# High left perch
-Tile 50 270 160 24
-
-# === CENTER PLATFORMS ===
-# Center bounce pad (contested middle ground)
-Tile 480 460 160 24
-# Center high
-Tile 520 310 128 24
-
-# === RIGHT SIDE PLATFORMS ===
-# Low shelf
-Tile 980 540 160 24
-# Mid platform
-Tile 1000 400 192 24
-# High right perch
-Tile 1070 270 160 24
-
-# === HIGH LEVEL (top tier, risky to reach) ===
-Tile 340 180 128 24
-Tile 576 150 128 24
-Tile 810 180 128 24
-
-# === KILL ZONES (narrow ledges that punish bad landings) ===
-Tile 230 600 64 24
-Tile 960 600 64 24
-# === ENEMIES ===
-Enemy 480 436 300 436 660 436 1.5 180 35
-Enemy 1000 376 850 376 1150 376 1.5 160 35
+# --- ENTITIES (From Layer: Game_Objects) ---
+Platform Bridge 438.5 664.0 71 16 850 650 2.5 Bridge
+Button 324.5 606.0 31 46 Bridge 0 1
+Exit 1131.5 560.5 69 83
+Spawn 87.0 617.0 127.0 617.0
+Button 878.0 603.0 34 44 Bridge 0 1
+# --- TILES (From Layer: Solid_Geometry) ---
+Tile 1200.0 625.0 200 50
+Tile 200.0 675.0 400 50
+Tile 1000.0 675.0 300 50
+Tile 1250.0 675.0 100 50

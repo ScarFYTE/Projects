@@ -140,6 +140,6 @@ public:
 
 class CSight {
 public:
-	float range = 180.0f;
+	float range = 100.0f;
 	float halfAngleDeg = 35.0f;
 };
