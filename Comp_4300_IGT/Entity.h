@@ -21,6 +21,7 @@ public:
 	std::shared_ptr<CInput>       input;
 	std::shared_ptr<CParticle>    particle;
 	std::shared_ptr<CHealth>	  health;
+	
 
 	void 		SaveBoundingbox();
 	Vec2		GetBoundingBoxCopy() const;

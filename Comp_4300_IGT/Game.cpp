@@ -194,7 +194,6 @@ void Game::sUserInput() {
 		}
 	}
 }
-
 void Game::sGravity() {
 	for (auto& e : entityManager.GetEntities("Player")) {
 		if (!e->transform) { continue; }
