@@ -1271,5 +1271,9 @@ sf::Texture& Game::getTexture(const std::string& name) {
 		// Optional: Load a pink "Error" texture here
 	}
 
+
+	textureCache[name].setSmooth(false);
+
+
 	return textureCache[name];
 }
