@@ -3,6 +3,15 @@
 #include "Entity.h"
 #include <SFML/Graphics.hpp>
 
+enum class GameState {
+	StartMenu,
+	Playing,
+	GameOver,
+	RespawnFadeOut,
+	RespawnFadeIn
+};
+
+
 class Game {
 	// -----------------------------------------------------------------------
 	// Constants
@@ -23,6 +32,10 @@ class Game {
 	Vec2 P1_SPAWN = Vec2(WINDOW_WIDTH * 0.25f, WINDOW_HEIGHT - GROUND_H - PLAYER_H * 0.5f);
 	Vec2 P2_SPAWN = Vec2(WINDOW_WIDTH * 0.5f, WINDOW_HEIGHT - GROUND_H - PLAYER_H * 0.5f);
 
+	
+
+
+
 	// -----------------------------------------------------------------------
 	// Members
 	// -----------------------------------------------------------------------
@@ -32,11 +45,17 @@ class Game {
 	bool Running      = true;
 	int  currentFrame = 0;
 
+	float transitionRadius = 3000.0f;
+	Vec2  transitionCenter = { 0.0f, 0.0f };
+
 	sf::View gameView;
 	float baseZoom = 1.0f;
 
 	std::shared_ptr<Entity> player1;  // WASD
 	std::shared_ptr<Entity> player2;  // Arrow keys
+
+	GameState State = GameState::StartMenu;
+	int SelectedOption = 0; // 0 = play, 1 = exit
 
 	// -----------------------------------------------------------------------
 	// Internal helpers
@@ -46,9 +65,14 @@ class Game {
 	void spawnGround();
 	void spawnPlayers();
 	void spawnDustParticles(Vec2 position, int count = 6, float directionX = 0.0f);
+
+	void RenderStartMenu();
 	void RenderHud();
-	void KillPlayer(std::shared_ptr<Entity> player);
-	void RespawnPlayer(std::shared_ptr<Entity> player);
+	void RenderGameOver();
+	void StartRespawn(Vec2 focusPoint);
+	void ApplyReset();
+	void sTransition();
+
 	// Systems
 	void sUserInput();
 	void sGravity();
@@ -59,6 +83,10 @@ class Game {
 	void sParticle();
 	void sHealth();
 	void sMovingPlatform();
+	void sInteract();
+	void sPatrol();
+	void sSight();
+
 
 public:
 

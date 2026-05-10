@@ -42,3 +42,6 @@ Tile 810 180 128 24
 # === KILL ZONES (narrow ledges that punish bad landings) ===
 Tile 230 600 64 24
 Tile 960 600 64 24
+# === ENEMIES ===
+Enemy 480 436 300 436 660 436 1.5 180 35
+Enemy 1000 376 850 376 1150 376 1.5 160 35

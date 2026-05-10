@@ -97,6 +97,7 @@ public:
 	std::string linkedTag;       // tag of the entity this triggers
 	bool isPressed = false;
 	bool requiresStay = true; // true = pressure plate, false = one-shot lever
+	bool requiresInput = false; // true = needs key press, false = activates on overlap
 };
 
 class CDoor {
@@ -105,6 +106,7 @@ public:
 	Vec2 openPos;
 	Vec2 closedPos;
 	float speed = 3.0f;
+	Vec2 savedHalfSize;
 };
 
 class CMovingPlatform {
@@ -125,4 +127,19 @@ public:
 class CExit {
 public:
 	int playersInside = 0;
+};
+
+
+class CPatrol {
+public:
+	std::vector<Vec2> waypoints;
+	int   currentTarget = 0;
+	float speed = 1.5f;
+	bool  facingRight = true;
+};
+
+class CSight {
+public:
+	float range = 180.0f;
+	float halfAngleDeg = 35.0f;
 };

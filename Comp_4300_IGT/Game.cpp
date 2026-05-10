@@ -31,8 +31,19 @@ void Game::init() {
 // Load Config
 void Game::loadConfig(const std::string& path) {
 	std::ifstream file(path);
+	if (!file.is_open()) {
+		std::cerr << "Could not open config: " << path << std::endl;
+		return;
+	}
 	std::string type;
 	while (file >> type) {
+		if (type[0] == '#') {
+			// Comment line — consume the rest
+			std::string dummy;
+			std::getline(file, dummy);
+			continue;
+		}
+
 		if (type == "Tile") {
 			float x, y, w, h;
 			file >> x >> y >> w >> h;
@@ -40,6 +51,119 @@ void Game::loadConfig(const std::string& path) {
 			tile->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
 			tile->boundingBox = std::make_shared<CBoundingBox>(w, h);
 			tile->sprite = std::make_shared<CSprite>(w, h, sf::Color(100, 80, 60));
+
+		}
+		else if (type == "Spawn") {
+			float p1x, p1y, p2x, p2y;
+			file >> p1x >> p1y >> p2x >> p2y;
+			P1_SPAWN = Vec2(p1x, p1y);
+			P2_SPAWN = Vec2(p2x, p2y);
+
+		}
+		else if (type == "Enemy") {
+			float x, y, wp1x, wp1y, wp2x, wp2y, speed, sightRange, sightAngle;
+			file >> x >> y >> wp1x >> wp1y >> wp2x >> wp2y >> speed >> sightRange >> sightAngle;
+
+			auto enemy = entityManager.AddEntity("Enemy");
+			enemy->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
+			enemy->boundingBox = std::make_shared<CBoundingBox>(40.0f, 48.0f);
+			enemy->sprite = std::make_shared<CSprite>(40.0f, 48.0f, sf::Color(220, 120, 0));
+
+			auto patrol = std::make_shared<CPatrol>();
+			patrol->waypoints.push_back(Vec2(wp1x, wp1y));
+			patrol->waypoints.push_back(Vec2(wp2x, wp2y));
+			patrol->speed = speed;
+			enemy->patrol = patrol;
+
+			auto sight = std::make_shared<CSight>();
+			sight->range = sightRange;
+			sight->halfAngleDeg = sightAngle;
+			enemy->sight = sight;
+
+		}
+		else if (type == "Button") {
+			float x, y, w, h;
+			std::string linkedTag;
+			int requiresStay, requiresInput; // Updated to include requiresInput
+			file >> x >> y >> w >> h >> linkedTag >> requiresStay >> requiresInput;
+
+			auto button = entityManager.AddEntity("Button");
+			button->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
+			button->boundingBox = std::make_shared<CBoundingBox>(w, h);
+			button->sprite = std::make_shared<CSprite>(w, h, sf::Color(200, 100, 0));
+
+			auto inter = std::make_shared<CInteractable>();
+			inter->linkedTag = linkedTag;
+			inter->requiresStay = (requiresStay != 0);
+			inter->requiresInput = (requiresInput != 0); // Apply the new setting
+			button->interactable = inter;
+
+		}
+		else if (type == "Door") {
+			std::string tag;
+			float x, y, w, h, openX, openY;
+			file >> tag >> x >> y >> w >> h >> openX >> openY;
+
+			auto door = entityManager.AddEntity(tag);
+			door->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
+			door->boundingBox = std::make_shared<CBoundingBox>(w, h);
+			door->sprite = std::make_shared<CSprite>(w, h, sf::Color(80, 60, 40));
+
+			auto d = std::make_shared<CDoor>();
+			d->closedPos = Vec2(x, y);
+			d->openPos = Vec2(openX, openY);
+			d->savedHalfSize = Vec2(w * 0.5f, h * 0.5f);
+			door->door = d;
+
+		}
+		else if (type == "Platform") {
+			std::string tag;
+			float x, y, w, h, targetX, targetY, speed;
+			std::string linkedTag;
+			file >> tag >> x >> y >> w >> h >> targetX >> targetY >> speed >> linkedTag;
+
+			auto plat = entityManager.AddEntity(tag);
+			plat->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
+			plat->boundingBox = std::make_shared<CBoundingBox>(w, h);
+			plat->sprite = std::make_shared<CSprite>(w, h, sf::Color(60, 100, 160));
+
+			auto mp = std::make_shared<CMovingPlatform>();
+			mp->posA = Vec2(x, y);
+			mp->posB = Vec2(targetX, targetY);
+			mp->speed = speed;
+			plat->movingPlatform = mp;
+
+		}
+		else if (type == "Checkpoint") {
+			float x, y, p1sx, p1sy, p2sx, p2sy;
+			file >> x >> y >> p1sx >> p1sy >> p2sx >> p2sy;
+
+			auto cp = entityManager.AddEntity("Checkpoint");
+			cp->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
+			cp->boundingBox = std::make_shared<CBoundingBox>(32.0f, 32.0f);
+			cp->sprite = std::make_shared<CSprite>(32.0f, 32.0f, sf::Color(0, 180, 255));
+
+			auto c = std::make_shared<CCheckpoint>();
+			c->p1Spawn = Vec2(p1sx, p1sy);
+			c->p2Spawn = Vec2(p2sx, p2sy);
+			cp->checkpoint = c;
+
+		}
+		else if (type == "Exit") {
+			float x, y, w, h;
+			file >> x >> y >> w >> h;
+
+			auto exit = entityManager.AddEntity("Exit");
+			exit->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
+			exit->boundingBox = std::make_shared<CBoundingBox>(w, h);
+			exit->sprite = std::make_shared<CSprite>(w, h, sf::Color(255, 220, 0));
+			exit->exit_ = std::make_shared<CExit>();
+
+		}
+		else {
+			// Unknown token — skip line
+			std::string dummy;
+			std::getline(file, dummy);
 		}
 	}
 }
@@ -101,11 +225,17 @@ void Game::Run() {
 	while (Running) {
 		entityManager.Update();
 		sUserInput();
-		sGravity();
-		sMovement();
-		sHealth();
-		sCollision();
-		sCamera();
+
+		sTransition();
+		if(State == GameState::Playing) {
+			sGravity();
+			sMovement();
+			sPatrol();
+			sSight();
+			sHealth();
+			sCollision();
+			sCamera();
+		}
 		sRender();
 		currentFrame++;
 	}
@@ -168,14 +298,54 @@ void Game::sUserInput() {
 		}
 
 		if (const auto* kp = event->getIf<sf::Event::KeyPressed>()) {
+			if (State == GameState::StartMenu) {
+				if (kp->code == sf::Keyboard::Key::Up ||
+					kp->code == sf::Keyboard::Key::W) {
+					SelectedOption = (SelectedOption + 1) % 2;
+				}
+				if (kp->code == sf::Keyboard::Key::Down ||
+					kp->code == sf::Keyboard::Key::S) {
+					SelectedOption = (SelectedOption + 1) % 2;
+				}
+				if (kp->code == sf::Keyboard::Key::Enter ||
+					kp->code == sf::Keyboard::Key::Space) {
+					if (SelectedOption == 0) {
+						State = GameState::Playing;
+					}
+					else {
+						Running = false;
+					}
+				}
+				return; 
+			}
+
+			if (State == GameState::GameOver) {
+				if (kp->code == sf::Keyboard::Key::R) {
+					// Full restart — reload config and respawn players
+					entityManager = EntityManager();
+					loadConfig("config.txt");
+					spawnPlayers();
+					entityManager.Update();
+					gameView = window.getDefaultView();
+					State = GameState::Playing;
+				}
+				if (kp->code == sf::Keyboard::Key::Escape) {
+					State = GameState::StartMenu;
+					SelectedOption = 0;
+				}
+				return;
+			}
+
 			switch (kp->code) {
 			case sf::Keyboard::Key::W: player1->input->jump = true; break;
 			case sf::Keyboard::Key::A: player1->input->left = true; break;
 			case sf::Keyboard::Key::D: player1->input->right = true; break;
+			case sf::Keyboard::Key::E: player1->input->interact = true; break;
 
 			case sf::Keyboard::Key::Up: player2->input->jump = true; break;
 			case sf::Keyboard::Key::Left:  player2->input->left = true; break;
 			case sf::Keyboard::Key::Right: player2->input->right = true; break;
+			case sf::Keyboard::Key::RShift: player2->input->interact = true; break;
 
 			default: break;
 			}
@@ -186,14 +356,144 @@ void Game::sUserInput() {
 			case sf::Keyboard::Key::A: player1->input->left = false; break;
 			case sf::Keyboard::Key::D: player1->input->right = false; break;
 			case sf::Keyboard::Key::W: player1->input->jump = false; break;
+			case sf::Keyboard::Key::E: player1->input->interact = false; break;
+
 			case sf::Keyboard::Key::Left:  player2->input->left = false; break;
 			case sf::Keyboard::Key::Right: player2->input->right = false; break;
 			case sf::Keyboard::Key::Up: player2->input->jump = false; break;
+			case sf::Keyboard::Key::RShift: player2->input->interact = false; break;
 
 			default: break;
 			}
 		}
 	}
+}
+
+void Game::sInteract() {
+	for (auto& button : entityManager.GetEntities("Button")) {
+		if (!button->interactable || !button->boundingBox || !button->transform) { continue; }
+
+		auto& inter = button->interactable;
+
+		bool anyOverlap = false;
+		bool interactPressed = false;
+
+		// 1. Check for overlap and input
+		for (auto& player : entityManager.GetEntities("Player")) {
+			if (!player->transform || !player->boundingBox) { continue; }
+
+			float dx = std::abs(player->transform->position.x - button->transform->position.x);
+			float dy = std::abs(player->transform->position.y - button->transform->position.y);
+
+			if (dx < player->boundingBox->halfSize.x + button->boundingBox->halfSize.x &&
+				dy < player->boundingBox->halfSize.y + button->boundingBox->halfSize.y) {
+
+				anyOverlap = true;
+				if (player->input->interact) {
+					interactPressed = true;
+					player->input->interact = false; // Consume input to prevent rapid toggling
+				}
+			}
+		}
+
+		bool wasPressed = inter->isPressed;
+
+		// 2. Handle state changes based on interaction type
+		if (inter->requiresInput) {
+			// LEVER BEHAVIOUR: Toggle on key press
+			if (anyOverlap && interactPressed) {
+				inter->isPressed = !inter->isPressed;
+			}
+		}
+		else {
+			// PRESSURE PLATE BEHAVIOUR: Activate on overlap
+			if (anyOverlap && !inter->isPressed) {
+				inter->isPressed = true;
+			}
+			else if (!anyOverlap && inter->requiresStay && inter->isPressed) {
+				inter->isPressed = false;
+			}
+		}
+
+		// 3. Trigger linked entities (Doors, Platforms)
+		if (inter->isPressed != wasPressed) {
+			for (auto& ent : entityManager.GetEntities()) {
+				if (ent->GetTag() == inter->linkedTag) {
+					if (ent->door) { ent->door->isOpen = inter->isPressed; }
+					if (ent->movingPlatform) { ent->movingPlatform->triggered = inter->isPressed; }
+				}
+			}
+		}
+
+		// 4. Visual Feedback
+		if (button->sprite) {
+			button->sprite->getShape().setFillColor(
+				inter->isPressed ? sf::Color(0, 200, 100) : sf::Color(200, 100, 0)
+			);
+		}
+	}
+}
+
+
+void Game::RenderStartMenu() {
+	const float cx = WINDOW_WIDTH * 0.5f;
+	const float cy = WINDOW_HEIGHT * 0.5f;
+
+	sf::Text title(font), opt0(font), opt1(font);
+
+	title.setCharacterSize(52);
+	title.setFillColor(sf::Color::White);
+	title.setString("2D Co-op Platformer");
+	title.setPosition({ cx - title.getLocalBounds().size.x * 0.5f, cy - 140.f });
+
+	opt0.setCharacterSize(30);
+	opt0.setString("Play");
+	opt0.setFillColor(SelectedOption == 0 ? sf::Color::Yellow : sf::Color(160, 160, 160));
+	opt0.setPosition({ cx - opt0.getLocalBounds().size.x * 0.5f, cy });
+
+	opt1.setCharacterSize(30);
+	opt1.setString("Quit");
+	opt1.setFillColor(SelectedOption == 1 ? sf::Color::Yellow : sf::Color(160, 160, 160));
+	opt1.setPosition({ cx - opt1.getLocalBounds().size.x * 0.5f, cy + 60.f });
+
+	// Arrow indicator next to selected option
+	sf::Text arrow(font);
+	arrow.setCharacterSize(30);
+	arrow.setFillColor(sf::Color::Yellow);
+	arrow.setString(">");
+	float arrowY = (SelectedOption == 0) ? cy : cy + 60.f;
+	arrow.setPosition({ cx - 120.f, arrowY });
+
+	window.draw(title);
+	window.draw(opt0);
+	window.draw(opt1);
+	window.draw(arrow);
+}
+
+void Game::RenderGameOver() {
+	const float cx = WINDOW_WIDTH * 0.5f;
+	const float cy = WINDOW_HEIGHT * 0.5f;
+
+	sf::Text over(font), sub(font), hint(font);
+
+	over.setCharacterSize(56);
+	over.setFillColor(sf::Color(220, 60, 60));
+	over.setString("Game Over");
+	over.setPosition({ cx - over.getLocalBounds().size.x * 0.5f, cy - 120.f });
+
+	sub.setCharacterSize(28);
+	sub.setFillColor(sf::Color::White);
+	sub.setString("Both players ran out of lives");
+	sub.setPosition({ cx - sub.getLocalBounds().size.x * 0.5f, cy });
+
+	hint.setCharacterSize(22);
+	hint.setFillColor(sf::Color(160, 160, 160));
+	hint.setString("R  — Restart      Escape — Main Menu");
+	hint.setPosition({ cx - hint.getLocalBounds().size.x * 0.5f, cy + 70.f });
+
+	window.draw(over);
+	window.draw(sub);
+	window.draw(hint);
 }
 
 void Game::sGravity() {
@@ -433,64 +733,19 @@ void Game::sHealth() {
 	for (auto& e : entityManager.GetEntities("Player")) {
 		if (!e->health || !e->transform) { continue; }
 
-		auto& h = e->health;
-		auto& t = e->transform;
+		// If a player falls off the map
+		if (e->transform->position.y > WINDOW_HEIGHT + 100.0f) {
+			e->health->lives--;
 
-
-		if (!h->isDead && t->position.y > WINDOW_HEIGHT + 100.0f) {
-			KillPlayer(e);
-		}
-
-		// respawn timer tick
-		if (h->isRespawning()) {
-			h->respawnTimer--;
-
-			if (h->respawnTimer <= 0) {
-				RespawnPlayer(e);
+			if (e->health->lives <= 0) {
+				State = GameState::GameOver;
 			}
-		}
-
-		// check lives all lost
-		if (!h->isDead && h->lives <= 0) {
-			//yet remains
+			else {
+				StartRespawn(e->transform->position);
+			}
+			return; // Stop checking so we don't double-trigger
 		}
 	}
-}
-
-
-void Game::KillPlayer(std::shared_ptr<Entity> e) {
-	auto& h = e->health;
-
-	h->lives--;
-	h->isDead = true;
-	h->respawnTimer = 180;  // 3 seconds at 60fps
-
-	// Hide the player during respawn
-	e->transform->velocity = { 0.0f, 0.0f };
-	e->transform->position = { -9999.0f, -9999.0f }; // off screen
-	e->SaveBoundingbox(); // Save current bounding box before disabling
-	e->boundingBox = nullptr;                 // disable collision
-
-	//spawnDustParticles(e->transform->position, 12);   
-
-	// Check game over
-	if (h->lives <= 0) {
-		// TODO: trigger game over state
-	}
-}
-
-void Game::RespawnPlayer(std::shared_ptr<Entity> e) {
-	auto& h = e->health;
-
-	h->isDead = false;
-	h->respawnTimer = 0;
-
-	// Restore position and collision
-	e->transform->position = h->spawnPoint;
-	e->transform->velocity = { 0.0f, 0.0f };
-	e->boundingBox = std::make_shared<CBoundingBox>(e->GetBoundingBoxCopy()); // retrieve Real bounding box from before death
-
-	//spawnDustParticles(h->spawnPoint, 8);  // spawn puff
 }
 
 void Game::RenderHud() {
@@ -504,35 +759,65 @@ void Game::RenderHud() {
 
 	// Build lives string: "P1: ♥ ♥ ♥"
 	std::string p1Lives = "P1: ";
-	for (int i = 0; i < player1->health->lives; i++) { p1Lives += "<3 "; }
-	if (player1->health->isRespawning()) {
-		p1Lives += " (respawning " + std::to_string(player1->health->respawnTimer / 60 + 1) + "s)";
+	for (int i = 0; i < player1->health->lives; i++) {
+		p1Lives += "<3 ";
+
+		std::string p2Lives = "P2: ";
+		for (int i = 0; i < player2->health->lives; i++) { p2Lives += "<3 "; }
+
+		p1Text.setString(p1Lives);
+		p2Text.setString(p2Lives);
+
+		p1Text.setPosition({ 20.f,  20.f });
+		p2Text.setPosition({ 20.0f,  50.0f });
+
+		window.draw(p1Text);
+		window.draw(p2Text);
 	}
-
-	std::string p2Lives = "P2: ";
-	for (int i = 0; i < player2->health->lives; i++) { p2Lives += "<3 "; }
-
-	p1Text.setString(p1Lives);
-	p2Text.setString(p2Lives);
-
-	p1Text.setPosition({ 20.f,  20.f });
-	p2Text.setPosition({ 20.0f,  50.0f });
-
-	window.draw(p1Text);
-	window.draw(p2Text);
 }
 
 void Game::sRender() {
 	window.clear(sf::Color(30, 30, 50));
-	window.setView(gameView);
 
+	if (State == GameState::StartMenu) {
+		window.setView(window.getDefaultView());
+		RenderStartMenu();
+		window.display();
+		return;
+	}
+
+	if (State == GameState::GameOver) {
+		window.setView(window.getDefaultView());
+		RenderGameOver();
+		window.display();
+		return;
+	}
+
+	// Playing
+	window.setView(gameView);
 	for (auto& e : entityManager.GetEntities()) {
 		if (e->transform && e->sprite) {
 			e->sprite->setPosition(e->transform->position);
 			window.draw(e->sprite->getShape());
 		}
 	}
-	sParticle(); // Update and render particles after all entities so they appear on top
+
+	sParticle();
+
+	// NEW CIRCULAR WIPE
+	if (State == GameState::RespawnFadeOut || State == GameState::RespawnFadeIn) {
+		sf::CircleShape wipeCircle;
+		float r = std::max(0.0f, transitionRadius);
+		wipeCircle.setRadius(r);
+		wipeCircle.setOrigin({ r, r });
+		wipeCircle.setPosition({ transitionCenter.x, transitionCenter.y });
+		
+		wipeCircle.setFillColor(sf::Color::Transparent); // Hole in the middle
+		wipeCircle.setOutlineColor(sf::Color::Black);
+		wipeCircle.setOutlineThickness(4000.0f);         // Massive outline covers the screen
+
+		window.draw(wipeCircle);
+	}
 
 	window.setView(window.getDefaultView());
 	RenderHud();
@@ -576,6 +861,115 @@ void Game::sMovingPlatform() {
 				// Apply the exact same movement to the player
 				player->transform->position += moveAmount;
 			}
+		}
+	}
+}
+
+void Game::sPatrol() {
+	for (auto& e : entityManager.GetEntities("Enemy")) {
+		if (!e->patrol || !e->transform) { continue; }
+
+		auto& patrol = e->patrol;
+		auto& t = e->transform;
+
+		if (patrol->waypoints.empty()) { continue; }
+
+		Vec2  target = patrol->waypoints[patrol->currentTarget];
+		Vec2  delta = target - t->position;
+		float dist = std::sqrt(delta.x * delta.x + delta.y * delta.y);
+
+		if (dist < 4.0f) {
+			// Reached waypoint — advance and loop back to 0
+			patrol->currentTarget =
+				(patrol->currentTarget + 1) % static_cast<int>(patrol->waypoints.size());
+		}
+		else {
+			// Normalize and move
+			Vec2 dir = delta * (1.0f / dist);
+			t->position += dir * patrol->speed;
+			patrol->facingRight = (dir.x > 0.0f);
+		}
+	}
+}
+void Game::sSight() {
+	static constexpr float PI = 3.14159265f;
+
+	for (auto& enemy : entityManager.GetEntities("Enemy")) {
+		if (!enemy->sight || !enemy->transform) { continue; }
+
+		auto& sight = enemy->sight;
+		Vec2  enemyPos = enemy->transform->position;
+
+		// Facing direction comes from patrol if available
+		Vec2 facing = { 1.0f, 0.0f };
+		if (enemy->patrol) {
+			facing = enemy->patrol->facingRight
+				? Vec2(1.0f, 0.0f)
+				: Vec2(-1.0f, 0.0f);
+		}
+
+		float cosHalf = std::cos(sight->halfAngleDeg * PI / 180.0f);
+
+		for (auto& player : entityManager.GetEntities("Player")) {
+			if (!player->transform || !player->health) { continue; }
+			if (player->health->isDead) { continue; }
+
+			Vec2  toPlayer = player->transform->position - enemyPos;
+			float dist = std::sqrt(toPlayer.x * toPlayer.x + toPlayer.y * toPlayer.y);
+
+			if (dist < sight->range && dist > 0.0f) {
+				Vec2  dir = toPlayer * (1.0f / dist);
+				float dot = facing.x * dir.x + facing.y * dir.y;
+
+				if (dot > cosHalf) {
+					player->health->lives--;
+					if (player->health->lives <= 0) {
+						State = GameState::GameOver;
+					}
+					else {
+						StartRespawn(player->transform->position);
+					}
+					return; // Stop processing
+				}
+			}
+		}
+	}
+}
+
+void Game::StartRespawn(Vec2 focusPoint) {
+	if (State == GameState::RespawnFadeOut || State == GameState::RespawnFadeIn) { return; }
+
+	State = GameState::RespawnFadeOut;
+	transitionCenter = focusPoint;  // Center the wipe on the player who died
+	transitionRadius = 3000.0f;     // Start massive to cover the zoomed-out camera
+}
+
+void Game::ApplyReset() {
+	// Teleport both players back to the start
+	player1->transform->position = P1_SPAWN;
+	player1->transform->velocity = { 0.0f, 0.0f };
+	player2->transform->position = P2_SPAWN;
+	player2->transform->velocity = { 0.0f, 0.0f };
+
+	// Move the circle focus to the middle of the spawn points for the fade-in
+	transitionCenter = Vec2((P1_SPAWN.x + P2_SPAWN.x) * 0.5f, (P1_SPAWN.y + P2_SPAWN.y) * 0.5f);
+	State = GameState::RespawnFadeIn;
+}
+
+void Game::sTransition() {
+	float fadeSpeed = 70.0f; // Adjust this to make the wipe faster/slower
+
+	if (State == GameState::RespawnFadeOut) {
+		transitionRadius -= fadeSpeed;
+		if (transitionRadius <= 0.0f) {
+			transitionRadius = 0.0f;
+			ApplyReset(); // Screen is fully black, safe to teleport players
+		}
+	}
+	else if (State == GameState::RespawnFadeIn) {
+		transitionRadius += fadeSpeed;
+		if (transitionRadius >= 3000.0f) {
+			State = GameState::Playing; // Transition done, resume gameplay
 		}
 	}
 }

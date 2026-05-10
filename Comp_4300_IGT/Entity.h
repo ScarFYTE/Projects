@@ -22,6 +22,12 @@ public:
 	std::shared_ptr<CParticle>    particle;
 	std::shared_ptr<CHealth>	  health;
 	std::shared_ptr<CMovingPlatform> movingPlatform;
+	std::shared_ptr<CInteractable> interactable;
+	std::shared_ptr<CDoor>        door;
+	std::shared_ptr<CPatrol> patrol;
+	std::shared_ptr<CSight>  sight;
+	std::shared_ptr<CCheckpoint> checkpoint;
+	std::shared_ptr<CExit> exit_;
 	
 
 	void 		SaveBoundingbox();
