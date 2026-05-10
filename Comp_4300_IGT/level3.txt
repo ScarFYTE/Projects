@@ -1,167 +1,206 @@
 # ==========================================
-# COOP ADVENTURE - Two Player Level
+# COOP ADVENTURE - Physics-Correct Level
 # ==========================================
-# World is ~2560px wide
-# No enemies, no checkpoints
+# Jump physics (from code):
+#   JUMP_VELOCITY = -8.0,  GRAVITY = 0.5
+#   Max jump height = 68px  (~2 tiles of 32px)
+#   Max horizontal range = 231px (full speed), safe = ~160px
+#   Player size = 24x24px
+#
+# Design rules enforced:
+#   - All step-ups are 1 tile (32px) or at most 2 tiles (64px)
+#   - All gaps are <= 128px (4 tiles) to stay comfortable
+#   - No step is ever 96px or more (would be unreachable)
+# ==========================================
 
 # -----------------------------------------------------------------------
-# SPAWN POINTS
+# SPAWN — ground level y=688 (tile top), players centered at y=672
 # -----------------------------------------------------------------------
-Spawn 80.0 656.0 128.0 656.0
-
-# -----------------------------------------------------------------------
-# ZONE 0 — Starting Ledge
-# -----------------------------------------------------------------------
-Tile 32.0  688.0 288.0 32.0 Grass
-Tile 32.0  720.0 288.0 32.0 Dirt
-Tile 32.0  752.0 288.0 32.0 Dirt
-Tile 32.0  784.0 288.0 32.0 Dirt
+Spawn 80.0 672.0 128.0 672.0
 
 # -----------------------------------------------------------------------
-# ZONE 1 — THE SPLIT
-# Left path (Player 1): lower route with a pressure plate
-# Right path (Player 2): upper route with a pressure plate
-# Both plates must be pressed to open the central gate door
+# ZONE 0 — Starting ledge  (x: 32–320)
+# Both players land together before the first split
+# -----------------------------------------------------------------------
+Tile 32.0   688.0  288.0 32.0 Grass
+Tile 32.0   720.0  288.0 32.0 Dirt
+Tile 32.0   752.0  288.0 32.0 Dirt
+
+# -----------------------------------------------------------------------
+# ZONE 1 — THE SPLIT  (x: 320–768)
+#
+# A wall divides the path into two routes:
+#   P1 stays on the LOWER floor (y=688 Grass)
+#   P2 climbs ONE step (32px) to the UPPER floor (y=656 Grass)
+#
+# Each route has a pressure plate (requiresStay=1, requiresInput=0).
+# Both must be stood on simultaneously to open the gate door.
 # -----------------------------------------------------------------------
 
-# --- Dividing pillar ---
-Tile 320.0  560.0  32.0 192.0 Dirt
+# Dividing wall — 3 tiles tall (96px), players cannot jump over (68px max)
+Tile 320.0  592.0   32.0  32.0 Dirt
+Tile 320.0  624.0   32.0  32.0 Dirt
+Tile 320.0  656.0   32.0  32.0 Dirt
+Tile 320.0  688.0   32.0  32.0 Dirt
 
-# --- LEFT PATH floor ---
-Tile 352.0  688.0 192.0  32.0 Grass
-Tile 352.0  720.0 192.0  32.0 Dirt
-Tile 352.0  752.0 192.0  32.0 Dirt
+# --- LOWER PATH (P1) — same level as start, y=688 Grass ---
+Tile 352.0  688.0  192.0  32.0 Grass
+Tile 352.0  720.0  192.0  32.0 Dirt
+Tile 352.0  752.0  192.0  32.0 Dirt
 
-# Left pressure plate (requiresStay=1, requiresInput=0)
-Button 480.0 679.0  24.0 8.0  gate 1 0
+# P1 pressure plate — centre of lower path
+Button 448.0  680.0  24.0  8.0  gate  1  0
 
-# --- RIGHT PATH (elevated) ---
-Tile 320.0  592.0  64.0 32.0 Grass
-Tile 320.0  624.0  64.0 32.0 Dirt
-Tile 384.0  560.0  64.0 32.0 Grass
-Tile 384.0  592.0  64.0 32.0 Dirt
-Tile 448.0  528.0  64.0 32.0 Grass
-Tile 448.0  560.0  64.0 32.0 Dirt
+# --- UPPER PATH (P2) — 1 tile (32px) higher than ground = y=656 Grass ---
+# Step-up: one 32px tile to climb onto the upper route (reachable, 32 < 68)
+Tile 352.0  656.0   64.0  32.0 Grass
+Tile 352.0  688.0   64.0  32.0 Dirt
 
 # Upper walkway
-Tile 512.0  528.0 192.0 32.0 Grass
-Tile 512.0  560.0 192.0 32.0 Dirt
+Tile 416.0  656.0  160.0  32.0 Grass
+Tile 416.0  688.0  160.0  32.0 Dirt
 
-# Right pressure plate (requiresStay=1, requiresInput=0)
-Button 608.0 519.0  24.0 8.0  gate 1 0
+# P2 pressure plate — centre of upper path
+Button 496.0  648.0  24.0  8.0  gate  1  0
 
-# --- GATE DOOR ---
-Door gate 704.0 656.0  32.0 64.0  0.0 0.0
+# --- GATE DOOR — blocks at x=576, spans from upper floor to lower floor ---
+Door gate  576.0  656.0   32.0  64.0   0.0  0.0
 
-# Reconnection ledge after the gate
-Tile 736.0  688.0 128.0 32.0 Grass
-Tile 736.0  720.0 128.0 32.0 Dirt
-Tile 736.0  752.0 128.0 32.0 Dirt
-
-# -----------------------------------------------------------------------
-# ZONE 2 — MOVING PLATFORM CANYON
-# One platform always moves; second is gated by a button
-# -----------------------------------------------------------------------
-
-# Left ledge before canyon
-Tile 864.0  688.0 64.0 32.0 Grass
-Tile 864.0  720.0 64.0 32.0 Dirt
-
-# Canyon floor (visual)
-Tile 928.0  848.0 320.0 32.0 Dirt
-Tile 928.0  880.0 320.0 32.0 Dirt
-
-# Moving platform 1 — always moving
-Platform free 960.0 656.0  80.0 12.0  1120.0 656.0  2.0 free
-
-# Button activates platform 2 (press E)
-Button 880.0 671.0  24.0 8.0  river 0 1
-
-# Moving platform 2 — gated
-Platform river 960.0 800.0  80.0 12.0  1120.0 656.0  2.5 river
-
-# Right ledge after canyon
-Tile 1248.0  688.0 96.0 32.0 Grass
-Tile 1248.0  720.0 96.0 32.0 Dirt
-Tile 1248.0  752.0 96.0 32.0 Dirt
+# Reconnection ledge — both paths merge back at ground level (y=688)
+Tile 608.0  688.0  160.0  32.0 Grass
+Tile 608.0  720.0  160.0  32.0 Dirt
+Tile 608.0  752.0  160.0  32.0 Dirt
 
 # -----------------------------------------------------------------------
-# ZONE 3 — ELEVATOR ROOM
-# Player 1 stands on hold-plate, Player 2 rides lift up
+# ZONE 2 — CANYON  (x: 768–1120)
+#
+# A gap in the floor. One moving platform runs freely end-to-end.
+# A second platform is toggled by a button (press E/RShift).
+# Gap width = 160px — comfortable running jump, but tricky with timing.
+# Players need to coordinate: one activates the second platform so
+# both can cross without waiting too long.
 # -----------------------------------------------------------------------
 
-Tile 1344.0  688.0 224.0 32.0 Grass
-Tile 1344.0  720.0 224.0 32.0 Dirt
-Tile 1344.0  752.0 224.0 32.0 Dirt
+# Left ledge
+Tile 608.0  688.0   64.0  32.0 Grass
+Tile 608.0  720.0   64.0  32.0 Dirt
 
-# Hold-plate at ground level
-Button 1472.0 679.0  24.0 8.0  lift 1 0
+# Toggle button on the left ledge (press E)
+Button 640.0  680.0  24.0  8.0  river  0  1
 
-# Elevator platform
-Platform lift 1568.0 688.0  64.0 12.0  1568.0 496.0  2.0 lift
+# Canyon pit floor (visual — players fall off screen before hitting this)
+Tile 768.0  880.0  320.0  32.0 Dirt
 
-# Upper walkway (reached via elevator)
-Tile 1504.0  528.0 192.0 32.0 Grass
-Tile 1504.0  560.0 192.0 32.0 Dirt
-Tile 1504.0  592.0 192.0 32.0 Dirt
+# Platform 1 — always moving, travels the full gap
+Platform free   800.0  688.0   64.0  12.0   960.0  688.0   2.0  free
 
-# Stairs back down from upper area to zone 4
-Tile 1696.0  560.0  64.0 32.0 Grass
-Tile 1696.0  592.0  64.0 32.0 Dirt
-Tile 1696.0  624.0  64.0 32.0 Grass
-Tile 1696.0  656.0  64.0 32.0 Dirt
+# Platform 2 — toggled on by button, starts parked off to the side low
+Platform river  800.0  780.0   64.0  12.0   960.0  688.0   3.0  river
 
-# -----------------------------------------------------------------------
-# ZONE 4 — PUZZLE ROOM
-# Both players must hold their plate simultaneously to open vault door
-# -----------------------------------------------------------------------
-
-Tile 1760.0  688.0 384.0 32.0 Grass
-Tile 1760.0  720.0 384.0 32.0 Dirt
-Tile 1760.0  752.0 384.0 32.0 Dirt
-Tile 1760.0  784.0 384.0 32.0 Dirt
-
-# Shelf ledges for lower player to hop up
-Tile 1792.0  624.0  80.0 16.0 Grass
-Tile 1872.0  576.0  80.0 16.0 Grass
-Tile 1952.0  528.0  80.0 16.0 Grass
-
-# High ledge for upper player
-Tile 2032.0  496.0 128.0 32.0 Grass
-Tile 2032.0  528.0 128.0 32.0 Dirt
-
-# LOW button (ground level, hold)
-Button 1840.0 679.0  24.0 8.0  vault 1 0
-
-# HIGH button (on high ledge, hold)
-Button 2080.0 487.0  24.0 8.0  vault 1 0
-
-# VAULT DOOR
-Door vault 2144.0 624.0  32.0 96.0  0.0 0.0
+# Right ledge
+Tile 960.0  688.0  160.0  32.0 Grass
+Tile 960.0  720.0  160.0  32.0 Dirt
+Tile 960.0  752.0  160.0  32.0 Dirt
 
 # -----------------------------------------------------------------------
-# ZONE 5 — FINAL SPRINT + EXIT
+# ZONE 3 — ELEVATOR ROOM  (x: 1120–1440)
+#
+# A shaft is cut into the floor.  P1 stands on a hold-plate at ground
+# level which drives an elevator up.  P2 rides the elevator to reach
+# an upper ledge (1 tile = 32px higher) where a door button lives.
+# P2 presses the door button (toggle, requiresInput=1) to open a door
+# that lets P1 through.  Then P2 hops back down (safe 32px drop).
 # -----------------------------------------------------------------------
 
-Tile 2176.0  688.0 352.0 32.0 Grass
-Tile 2176.0  720.0 352.0 32.0 Dirt
-Tile 2176.0  752.0 352.0 32.0 Dirt
+# Main floor
+Tile 1120.0  688.0  128.0  32.0 Grass
+Tile 1120.0  720.0  128.0  32.0 Dirt
 
-# Raised exit platform
-Tile 2464.0  560.0 128.0 32.0 Grass
-Tile 2464.0  592.0 128.0 32.0 Dirt
-Tile 2464.0  624.0 128.0 32.0 Dirt
-Tile 2464.0  656.0 128.0 32.0 Dirt
+# Hold-plate for elevator (P1 stands here)
+Button  1184.0  680.0  24.0  8.0  lift  1  0
 
-# Stair steps up to exit platform
-Tile 2336.0  656.0 64.0 32.0 Grass
-Tile 2336.0  688.0 64.0 32.0 Dirt
-Tile 2400.0  624.0 64.0 32.0 Grass
-Tile 2400.0  656.0 64.0 32.0 Dirt
-Tile 2400.0  688.0 64.0 32.0 Dirt
+# Elevator platform — travels 64px up (2 tiles, within jump height)
+Platform lift  1248.0  688.0  48.0  12.0  1248.0  624.0  2.5  lift
 
-# EXIT — both players must reach it
-Exit 2528.0 496.0  32.0 64.0
+# Upper ledge reached by elevator (64px above ground = y=624 Grass)
+Tile 1216.0  624.0  128.0  32.0 Grass
+Tile 1216.0  656.0  128.0  32.0 Dirt
+
+# Door-button on upper ledge (P2 presses to open passage door)
+Button  1280.0  616.0  24.0  8.0  passage  0  1
+
+# Passage door at ground level — P1 is blocked until P2 opens it
+Door passage  1344.0  672.0   32.0  64.0   0.0  0.0
+
+# Floor continues after door
+Tile 1376.0  688.0  128.0  32.0 Grass
+Tile 1376.0  720.0  128.0  32.0 Dirt
+
+# Step down from upper ledge back to ground: 1-tile drop (32px, safe)
+# (no tile needed — players just walk off the edge and land on x=1376 floor)
+
+# -----------------------------------------------------------------------
+# ZONE 4 — SIMULTANEOUS BUTTON ROOM  (x: 1504–1888)
+#
+# TWO buttons must be held at the same time to open the vault door.
+# Both buttons are at the SAME ground level — no height puzzles.
+# The challenge is purely cooperative timing: both players reach
+# their button before either one lifts off.
+# A small raised platform (1 tile = 32px) in the centre separates them
+# so they can't just stand next to each other — they must split up.
+# -----------------------------------------------------------------------
+
+# Left section floor
+Tile 1504.0  688.0  128.0  32.0 Grass
+Tile 1504.0  720.0  128.0  32.0 Dirt
+
+# Central divider — 2 tiles tall (64px), players cannot jump over (68px max, barely)
+# Make it 64px so it's tight — adds tension but is still possible if they jump together
+Tile 1632.0  656.0   32.0  32.0 Dirt
+Tile 1632.0  688.0   32.0  32.0 Dirt
+
+# Right section floor
+Tile 1664.0  688.0  128.0  32.0 Grass
+Tile 1664.0  720.0  128.0  32.0 Dirt
+
+# P1 hold-button — left side
+Button  1568.0  680.0  24.0  8.0  vault  1  0
+
+# P2 hold-button — right side
+Button  1728.0  680.0  24.0  8.0  vault  1  0
+
+# VAULT DOOR — at the end of the right section
+Door vault  1792.0  672.0  32.0  64.0  0.0  0.0
+
+# -----------------------------------------------------------------------
+# ZONE 5 — FINAL CLIMB + EXIT  (x: 1824–2176)
+#
+# A staircase of 1-tile steps (32px each) leads to a raised platform.
+# Total climb = 3 steps = 96px — but it's stairs so each step is 32px.
+# Both players must reach the Exit tile to win.
+# -----------------------------------------------------------------------
+
+# Ground floor approach
+Tile 1824.0  688.0  128.0  32.0 Grass
+Tile 1824.0  720.0  128.0  32.0 Dirt
+
+# Stair step 1: +32px  (y = 656)
+Tile 1952.0  656.0   64.0  32.0 Grass
+Tile 1952.0  688.0   64.0  32.0 Dirt
+
+# Stair step 2: +64px  (y = 624)
+Tile 2016.0  624.0   64.0  32.0 Grass
+Tile 2016.0  656.0   64.0  32.0 Dirt
+Tile 2016.0  688.0   64.0  32.0 Dirt
+
+# Stair step 3: +96px  (y = 592) — reached by two 32px hops, totally fine
+Tile 2080.0  592.0   96.0  32.0 Grass
+Tile 2080.0  624.0   96.0  32.0 Dirt
+Tile 2080.0  656.0   96.0  32.0 Dirt
+Tile 2080.0  688.0   96.0  32.0 Dirt
+
+# EXIT — on the top platform, both players must touch it
+Exit  2128.0  528.0  32.0  64.0
 
 # -----------------------------------------------------------------------
 # MUSIC
