@@ -1015,6 +1015,17 @@ void Game::RenderHud() {
 void Game::sRender() {
 	window.clear(sf::Color(30, 30, 50));
 
+	// --- 1. THE STATIC LAYER (UI and Background) ---
+	// We use the Default View so coordinates are always (0,0) to (1280,720)
+	window.setView(window.getDefaultView());
+
+	if (hasBackground) {
+		// Force the background to the top-left of the screen
+		backgroundSprite.setPosition({ 0.f, 0.f });
+		window.draw(backgroundSprite);
+	}
+
+
 	if (State == GameState::StartMenu) {
 		window.setView(window.getDefaultView());
 		RenderStartMenu();
@@ -1031,10 +1042,6 @@ void Game::sRender() {
 
 
 	window.setView(window.getDefaultView());
-	if (hasBackground) {
-		backgroundSprite.setPosition({0.0f,0.0f});
-		window.draw(backgroundSprite);
-	}
 
 	// Playing
 	window.setView(gameView);
