@@ -50,7 +50,7 @@ void Game::init() {
 		std::cerr << "Failed to load button.wav" << std::endl;
 	}
 
-	window.create(sf::VideoMode({ WINDOW_WIDTH, WINDOW_HEIGHT }), "2D Platformer - 2 Player");
+	window.create(sf::VideoMode({ WINDOW_WIDTH, WINDOW_HEIGHT }), "2 bhai 2no Tabahi");
 	window.setFramerateLimit(60);
 	spawnPlayers();
 	// Flush the spawn queue before the first frame
@@ -584,7 +584,7 @@ void Game::RenderStartMenu() {
 
 	title.setCharacterSize(52);
 	title.setFillColor(sf::Color::White);
-	title.setString("2D Co-op Platformer");
+	title.setString("2 bhai 2no Tabahi");
 	title.setPosition({ cx - title.getLocalBounds().size.x * 0.5f, cy - 140.f });
 
 	opt0.setCharacterSize(30);
@@ -810,11 +810,7 @@ void Game::sCollision() {
 		// --- PLAYER vs PLAYER COLLISION ---
 		for (auto& Other : entityManager.GetEntities("Player")) {
 
-			// 1. THE ANTI-FIGHTING LOCK
-			// By comparing memory addresses, we ensure P1 checks P2, but P2 skips P1. 
-			// This prevents them from calculating the collision twice and fighting!
 			if (e.get() >= Other.get()) { continue; }
-
 			if (!Other->transform || !Other->boundingBox) { continue; }
 
 			const float hw = e->boundingBox->halfSize.x;
@@ -829,23 +825,23 @@ void Game::sCollision() {
 				float overlapX = (hw + otherHW) - std::abs(dx);
 				float overlapY = (hh + otherHH) - std::abs(dy);
 
-				// 2. THE EDGE-JITTER FIX (+8.0f Bias)
-				// By adding 8 pixels to overlapX, we force the engine to treat 
-				// edge-cases as vertical floors, stopping the players from sliding off!
-				// 2. THE EDGE-JITTER FIX (+8.0f Bias)
-				if (overlapY < overlapX + 8.0f) {
+				// INCREASED BIAS to 16.0f: Heavily favors standing on heads so you don't slip off the edge!
+				if (overlapY < overlapX + 16.0f) {
 
 					// --- VERTICAL COLLISION (Someone is on top) ---
 					if (dy < 0.0f) {
 						// 'e' is ABOVE 'Other'
 						e->transform->position.y -= overlapY;
 						e->transform->onGround = true;
-
-						// --- THE JUMP BOOST FIX ---
-						// Manually grant jump frames so they can leap off mid-air!
 						e->transform->coyoteFrames = 8;
 
-						e->transform->velocity.y = (Other->transform->velocity.y < 0.0f) ? Other->transform->velocity.y : 0.0f;
+						// THE JUMP FIX: ONLY stop their Y velocity if they are FALLING (> 0).
+						// If they are jumping (< 0), leave their -8.0f velocity alone!
+						if (e->transform->velocity.y > 0.0f) {
+							e->transform->velocity.y = (Other->transform->velocity.y < 0.0f) ? Other->transform->velocity.y : 0.0f;
+						}
+
+						// CARRY MECHANIC: Move the top player perfectly with the bottom player
 						e->transform->position.x += Other->transform->velocity.x;
 
 					}
@@ -853,11 +849,14 @@ void Game::sCollision() {
 						// 'Other' is ABOVE 'e'
 						Other->transform->position.y -= overlapY;
 						Other->transform->onGround = true;
-
-						// --- THE JUMP BOOST FIX ---
 						Other->transform->coyoteFrames = 8;
 
-						Other->transform->velocity.y = (e->transform->velocity.y < 0.0f) ? e->transform->velocity.y : 0.0f;
+						// THE JUMP FIX: ONLY stop their Y velocity if they are FALLING
+						if (Other->transform->velocity.y > 0.0f) {
+							Other->transform->velocity.y = (e->transform->velocity.y < 0.0f) ? e->transform->velocity.y : 0.0f;
+						}
+
+						// CARRY MECHANIC
 						Other->transform->position.x += e->transform->velocity.x;
 					}
 
@@ -880,7 +879,7 @@ void Game::sCollision() {
 				}
 			}
 		}
-		// --- END PLAYER vs PLAYER ---}
+		// --- END PLAYER vs PLAYER ---
 	}
 }
 void Game::sParticle() {
