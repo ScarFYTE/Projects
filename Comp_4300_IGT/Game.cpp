@@ -11,6 +11,8 @@ Game::Game() {
 }
 
 void Game::init() {
+
+	PushMusic("menu.ogg");
 	//levelQueue.enqueue("level1.txt");
 	levelQueue.enqueue("Level2.txt");
 	levelQueue.enqueue("Level3.txt");
