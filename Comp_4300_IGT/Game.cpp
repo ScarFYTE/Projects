@@ -90,26 +90,20 @@ void Game::loadConfig(const std::string& path) {
 		// 3. Parse based on the type
 		if (type == "Tile") {
 			float x, y, w, h;
-			std::string texKey; // This will hold "Grass", "Dirt", etc.
+			std::string texKey;
 
-			if (!(iss >> x >> y >> w >> h >> texKey)) {
-				std::cerr << "Warning: Tile line malformed or missing texture name!" << std::endl;
-				continue;
-			}
+			iss >> x >> y >> w >> h >> texKey; // Reads "Grass" or "Dirt"
 
 			auto tile = entityManager.AddEntity("Tile");
 			tile->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
 			tile->boundingBox = std::make_shared<CBoundingBox>(w, h);
-
-			// 1. Create the sprite
 			tile->sprite = std::make_shared<CSprite>(w, h, sf::Color::White);
 
-			// 2. Fetch the texture from our cache and apply it
+			// APPLY TEXTURE
 			sf::Texture& tex = getTexture(texKey);
 			tile->sprite->getShape().setTexture(&tex);
 
-			// 3. Optional: If your textures are small (e.g. 32x32) but your tile is big (128x32),
-			// you might want the texture to repeat rather than stretch.
+			// HANDLE REPEATING (For long platforms)
 			if (w > tex.getSize().x || h > tex.getSize().y) {
 				tex.setRepeated(true);
 				tile->sprite->getShape().setTextureRect(sf::IntRect({ 0, 0 }, { (int)w, (int)h }));
@@ -1257,25 +1251,24 @@ void Game::PopMusic() {
 }
 
 sf::Texture& Game::getTexture(const std::string& name) {
-	// 1. Check if we already have this texture
 	auto it = textureCache.find(name);
 	if (it != textureCache.end()) {
 		return it->second;
 	}
 
-	// 2. If not, load it. 
-	// We assume your files are named "Grass.png", "Dirt.png", etc. 
-	// and live in a "Textures" folder.
 	std::string path = "Textures/" + name + ".png";
 
+	// Try to load the texture
 	if (!textureCache[name].loadFromFile(path)) {
-		std::cerr << "Could not load texture: " << path << " - using fallback!" << std::endl;
-		// Optional: Load a pink "Error" texture here
+		std::cerr << "!!! ERROR: Could not find " << path << " !!!" << std::endl;
+
+		// CREATE A PINK FALLBACK
+		// If the file is missing, we make a 2x2 pink texture in memory
+		sf::Image pinkImage;
+		pinkImage.create({ 2, 2 }, sf::Color::Magenta);
+		textureCache[name].loadFromImage(pinkImage);
 	}
 
-
 	textureCache[name].setSmooth(false);
-
-
 	return textureCache[name];
 }
