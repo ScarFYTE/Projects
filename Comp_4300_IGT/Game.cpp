@@ -303,33 +303,37 @@ void Game::sCamera() {
 		Vec2 p1 = player1->transform->position;
 		Vec2 p2 = player2->transform->position;
 
-		// 1. Midpoint (Target Center)
+		// 1. Midpoint (The Point of Interest)
 		cx = (p1.x + p2.x) / 2.0f;
 		cy = (p1.y + p2.y) / 2.0f;
 
-		// 2. Calculate distances with extra padding (e.g., 200px)
-		float dx = std::abs(p1.x - p2.x) + 200.f;
-		float dy = std::abs(p1.y - p2.y) + 200.f;
+		// 2. Tighter Distances & Padding
+		// Reduced padding to 120 so players aren't lost in the middle
+		float dx = std::abs(p1.x - p2.x) + 120.f;
+		float dy = std::abs(p1.y - p2.y) + 120.f;
 
-		// 3. Keep aspect ratio correct
 		float aspect = static_cast<float>(WINDOW_HEIGHT) / WINDOW_WIDTH;
 
-		// 4. Calculate required width/height
-		// We check if the height spread is more restrictive than the width
+		// 3. SET YOUR ZOOM LIMITS HERE
+		// minViewW = 800 means when you are close, the camera zooms in 
+		// until the screen only covers 800 pixels of the world.
+		float minViewW = 800.f;
+		float minViewH = minViewW * aspect;
+
+		// 4. Calculate required width/height based on player spread
 		if (dy > dx * aspect) {
-			viewH = std::max(static_cast<float>(WINDOW_HEIGHT), dy);
+			viewH = std::max(minViewH, dy);
 			viewW = viewH / aspect;
 		}
 		else {
-			viewW = std::max(static_cast<float>(WINDOW_WIDTH), dx);
+			viewW = std::max(minViewW, dx);
 			viewH = viewW * aspect;
 		}
 
-		// 5. OPTIONAL: Max Zoom Cap (Prevents players from becoming tiny dots)
-		// If the distance is over 2500px, stop zooming out.
-		if (viewW > 2500.f) {
-			viewW = 2500.f;
-			viewH = 2500.f * aspect;
+		// 5. MAX ZOOM CAP (Keep this so they don't look like ants)
+		if (viewW > 2200.f) {
+			viewW = 2200.f;
+			viewH = 2200.f * aspect;
 		}
 	}
 	else {
