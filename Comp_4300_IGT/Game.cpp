@@ -241,7 +241,7 @@ void Game::loadConfig(const std::string& path) {
 				}
 
 				hasBackground = true;
-				}
+		}
 		else {
 			// If we get an unknown token, we just ignore this specific line
 			std::cerr << "Warning: Unknown entity type in config: " << type << std::endl;
@@ -1031,6 +1031,7 @@ void Game::sRender() {
 
 	window.setView(window.getDefaultView());
 	if (hasBackground) {
+		backgroundSprite.setPosition(gameView.getCenter() - (gameView.getSize() * 0.5f));
 		window.draw(backgroundSprite);
 	}
 
