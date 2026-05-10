@@ -14,10 +14,11 @@ Button 1028.0 283.0 8 12 buttonary 0 1
 Button 1060.0 282.0 8 12 stair 1 1
 Platform stair 1136.0 900.0 32 8 1136 288 2.5 stair
 Platform stair 1168.0 924.0 32 8 1168 280 2.5 stair
-Music level2.ogg
 Platform stair 1200.0 948.0 32 8 1200 272 2.5 stair
 Platform stair 1232.0 972.0 32 8 1232 264 2.5 stair
 Platform stair 1264.0 996.0 32 8 1264 256 2.5 stair
+
+Music level2.ogg
 # --- TILES (From Layer: solidgeometry) ---
 Tile 1376.0 272.0 128 32 Dirt
 Tile 1056.0 304.0 128 32 Grass

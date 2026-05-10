@@ -112,7 +112,7 @@ public:
 
 class CDoor {
 public:
-	std::string linktag;
+	std::string linkTag;
 	bool isOpen = false;
 
 	CDoor() {}
