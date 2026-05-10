@@ -88,16 +88,30 @@ void Game::loadConfig(const std::string& path) {
 		// 3. Parse based on the type
 		if (type == "Tile") {
 			float x, y, w, h;
-			std::string texName = "ErrorTexture.png"; // Safe fallback!
+			std::string texKey; // This will hold "Grass", "Dirt", etc.
 
-			// If the line is missing a texture name, this won't crash the game anymore.
-			iss >> x >> y >> w >> h >> texName;
+			if (!(iss >> x >> y >> w >> h >> texKey)) {
+				std::cerr << "Warning: Tile line malformed or missing texture name!" << std::endl;
+				continue;
+			}
 
 			auto tile = entityManager.AddEntity("Tile");
 			tile->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
 			tile->boundingBox = std::make_shared<CBoundingBox>(w, h);
+
+			// 1. Create the sprite
 			tile->sprite = std::make_shared<CSprite>(w, h, sf::Color::White);
-			tile->sprite->loadTexture(texName, true);
+
+			// 2. Fetch the texture from our cache and apply it
+			sf::Texture& tex = getTexture(texKey);
+			tile->sprite->getShape().setTexture(&tex);
+
+			// 3. Optional: If your textures are small (e.g. 32x32) but your tile is big (128x32),
+			// you might want the texture to repeat rather than stretch.
+			if (w > tex.getSize().x || h > tex.getSize().y) {
+				tex.setRepeated(true);
+				tile->sprite->getShape().setTextureRect(sf::IntRect({ 0, 0 }, { (int)w, (int)h }));
+			}
 		}
 		else if (type == "Spawn") {
 			float p1x, p1y, p2x, p2y;
@@ -1238,4 +1252,24 @@ void Game::PopMusic() {
 			bgMusic.play();
 		}
 	}
+}
+
+sf::Texture& Game::getTexture(const std::string& name) {
+	// 1. Check if we already have this texture
+	auto it = textureCache.find(name);
+	if (it != textureCache.end()) {
+		return it->second;
+	}
+
+	// 2. If not, load it. 
+	// We assume your files are named "Grass.png", "Dirt.png", etc. 
+	// and live in a "Textures" folder.
+	std::string path = "Textures/" + name + ".png";
+
+	if (!textureCache[name].loadFromFile(path)) {
+		std::cerr << "Could not load texture: " << path << " - using fallback!" << std::endl;
+		// Optional: Load a pink "Error" texture here
+	}
+
+	return textureCache[name];
 }
