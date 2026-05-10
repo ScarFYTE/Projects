@@ -1139,7 +1139,7 @@ void Game::PushMusic(const std::string& path) {
 
 	bgMusic.stop();
 	if (bgMusic.openFromFile(path)) {
-		bgMusic.setLoop(true);
+		bgMusic.setLooping(true);
 		bgMusic.setVolume(30.f);
 		bgMusic.play();
 	}
@@ -1159,7 +1159,7 @@ void Game::PopMusic() {
 	if (!musicStack.isEmpty()) {
 		std::string previousTrack = musicStack.top();
 		if (bgMusic.openFromFile(previousTrack)) {
-			bgMusic.setLoop(true);
+			bgMusic.setLooping(true);
 			bgMusic.setVolume(30.f);
 			bgMusic.play();
 		}

@@ -132,13 +132,14 @@ class Game {
 	// Members
 	// -----------------------------------------------------------------------
 
-
 	// --- AUDIO ---
 	sf::Music bgMusic;
+
 	sf::SoundBuffer jumpBuffer;
-	sf::Sound jumpSound;
+	sf::Sound jumpSound{ jumpBuffer }; // SFML 3 Fix: Attach buffer immediately
+
 	sf::SoundBuffer buttonBuffer;
-	sf::Sound buttonSound;
+	sf::Sound buttonSound{ buttonBuffer }; // SFML 3 Fix: Attach buffer immediately
 
 	// --- NEW STACK MANAGER ---
 	MusicStack musicStack;
