@@ -10,6 +10,7 @@ Spawn 85.0 637.0 125.0 637.0
 Exit 1246.5 442.0 61 72
 Platform ballz 992.5 909.0 257 8 992 484 2.5 Bridge_lvl1
 Button 1151.0 479.0 8 8 ballz 0 1
+Music level1.ogg
 # --- TILES (From Layer: solidgeometry) ---
 Tile 800.0 496.0 128 32 Grass
 Tile 1200.0 496.0 160 32 Grass

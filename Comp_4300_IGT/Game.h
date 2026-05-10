@@ -3,6 +3,7 @@
 #include "Entity.h"
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
+#include <iostream>
 enum class GameState {
 	StartMenu,
 	Playing,
@@ -100,6 +101,21 @@ public:
 
 	void clear() {
 		while (!isEmpty()) { pop(); }
+	}
+
+	void print() {
+		if (isEmpty()) {
+			std::cout << "Music Stack: [Empty]" << std::endl;
+			return;
+		}
+		std::cout << "Music Stack (top to bottom):" << std::endl;
+		MusicNode* current = topNode;
+		int index = 0;
+		while (current != nullptr) {
+			std::cout << "  [" << index << "] " << current->trackPath << std::endl;
+			current = current->next;
+			index++;
+		}
 	}
 };
 
