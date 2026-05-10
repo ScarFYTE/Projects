@@ -74,6 +74,8 @@ void Game::loadConfig(const std::string& path) {
 		return;
 	}
 
+	hasBackground = false;
+
 	std::string line;
 	// Read the file ONE FULL LINE at a time
 	while (std::getline(file, line)) {
@@ -215,6 +217,20 @@ void Game::loadConfig(const std::string& path) {
 			//musicStack.clear();      // Clear old state
 			PushMusic(trackName);    // Push level music
 			}
+		else if (type == "Background") {
+				std::string bgName;
+				iss >> bgName;
+
+				sf::Texture& bgTex = getTexture(bgName);
+				backgroundSprite.setTexture(bgTex);
+
+				// Automatically stretch the image to perfectly fit the 1280x720 window
+				float scaleX = static_cast<float>(WINDOW_WIDTH) / bgTex.getSize().x;
+				float scaleY = static_cast<float>(WINDOW_HEIGHT) / bgTex.getSize().y;
+				backgroundSprite.setScale({ scaleX, scaleY });
+
+				hasBackground = true;
+				}
 		else {
 			// If we get an unknown token, we just ignore this specific line
 			std::cerr << "Warning: Unknown entity type in config: " << type << std::endl;
@@ -999,6 +1015,12 @@ void Game::sRender() {
 		RenderGameOver();
 		window.display();
 		return;
+	}
+
+
+	window.setView(window.getDefaultView());
+	if (hasBackground) {
+		window.draw(backgroundSprite);
 	}
 
 	// Playing
