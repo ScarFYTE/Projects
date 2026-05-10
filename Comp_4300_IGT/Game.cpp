@@ -372,7 +372,10 @@ void Game::sUserInput() {
 					// Full restart — reload config and respawn players
 					PopMusic();
 					entityManager = EntityManager();
-					loadConfig("config.txt");
+					
+					loadConfig(currentLevelPath);
+
+
 					spawnPlayers();
 					entityManager.Update();
 					gameView = window.getDefaultView();
