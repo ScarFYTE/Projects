@@ -8,6 +8,7 @@ enum class GameState {
 	StartMenu,
 	Playing,
 	GameOver,
+	GameWon,
 	RespawnFadeOut,
 	RespawnFadeIn
 };
@@ -210,6 +211,7 @@ class Game {
 	void StartRespawn(Vec2 focusPoint);
 	void ApplyReset();
 	void sTransition();
+	void RenderGameWon();
 
 	//Levels
 	void LoadNextLevel();

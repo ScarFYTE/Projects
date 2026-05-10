@@ -449,6 +449,20 @@ void Game::sUserInput() {
 				}
 				return;
 			}
+			if (State == GameState::GameWon) {
+				if (kp->code == sf::Keyboard::Key::Enter ||
+					kp->code == sf::Keyboard::Key::Space ||
+					kp->code == sf::Keyboard::Key::Escape) {
+
+					// Return to Main Menu and reset the queue for a new playthrough!
+					State = GameState::StartMenu;
+					SelectedOption = 0;
+
+					// Re-populate the queue so they can play again
+					levelQueue.enqueue("Level3.txt"); // Add your levels back here
+				}
+				return;
+			}
 
 			switch (kp->code) {
 			case sf::Keyboard::Key::W: player1->input->jump = true; break;
@@ -1040,6 +1054,13 @@ void Game::sRender() {
 		return;
 	}
 
+	if (State == GameState::GameWon) {
+		window.setView(window.getDefaultView());
+		RenderGameWon();
+		window.display();
+		return;
+	}
+
 
 	window.setView(window.getDefaultView());
 
@@ -1239,7 +1260,7 @@ void Game::sWinCondition() {
 void Game::LoadNextLevel() {
 	// 1. Check if we beat the last level
 	if (levelQueue.isEmpty()) {
-		State = GameState::StartMenu;
+		State = GameState::GameWon;
 
 		PushMusic("menu.ogg");
 		return;
@@ -1364,4 +1385,29 @@ sf::Texture& Game::getTexture(const std::string& name) {
 
 	textureCache[name].setSmooth(false);
 	return textureCache[name];
+}
+void Game::RenderGameWon() {
+	const float cx = WINDOW_WIDTH * 0.5f;
+	const float cy = WINDOW_HEIGHT * 0.5f;
+
+	sf::Text over(font), sub(font), hint(font);
+
+	over.setCharacterSize(56);
+	over.setFillColor(sf::Color(255, 215, 0)); // Gold color!
+	over.setString("VICTORY!");
+	over.setPosition({ cx - over.getLocalBounds().size.x * 0.5f, cy - 120.f });
+
+	sub.setCharacterSize(28);
+	sub.setFillColor(sf::Color::White);
+	sub.setString("You have conquered the Zenith Vault.");
+	sub.setPosition({ cx - sub.getLocalBounds().size.x * 0.5f, cy });
+
+	hint.setCharacterSize(22);
+	hint.setFillColor(sf::Color(160, 160, 160));
+	hint.setString("Press Enter or Space to return to Main Menu");
+	hint.setPosition({ cx - hint.getLocalBounds().size.x * 0.5f, cy + 70.f });
+
+	window.draw(over);
+	window.draw(sub);
+	window.draw(hint);
 }
