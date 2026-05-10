@@ -487,6 +487,7 @@ void Game::sInteract() {
 		if (inter->isPressed != wasPressed) {
 
 			buttonSound.play();
+
 			for (auto& ent : entityManager.GetEntities()) {
 				if (ent->GetTag() == inter->linkedTag) {
 					if (ent->door) { ent->door->isOpen = inter->isPressed; }
