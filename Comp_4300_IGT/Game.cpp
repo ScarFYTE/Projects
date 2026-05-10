@@ -832,6 +832,7 @@ void Game::sCollision() {
 				// 2. THE EDGE-JITTER FIX (+8.0f Bias)
 				// By adding 8 pixels to overlapX, we force the engine to treat 
 				// edge-cases as vertical floors, stopping the players from sliding off!
+				// 2. THE EDGE-JITTER FIX (+8.0f Bias)
 				if (overlapY < overlapX + 8.0f) {
 
 					// --- VERTICAL COLLISION (Someone is on top) ---
@@ -840,10 +841,11 @@ void Game::sCollision() {
 						e->transform->position.y -= overlapY;
 						e->transform->onGround = true;
 
-						// If the bottom player jumps, the top player inherits their upward momentum!
-						e->transform->velocity.y = (Other->transform->velocity.y < 0.0f) ? Other->transform->velocity.y : 0.0f;
+						// --- THE JUMP BOOST FIX ---
+						// Manually grant jump frames so they can leap off mid-air!
+						e->transform->coyoteFrames = 8;
 
-						// CARRY MECHANIC: Shift the top player horizontally by the bottom player's speed
+						e->transform->velocity.y = (Other->transform->velocity.y < 0.0f) ? Other->transform->velocity.y : 0.0f;
 						e->transform->position.x += Other->transform->velocity.x;
 
 					}
@@ -851,6 +853,9 @@ void Game::sCollision() {
 						// 'Other' is ABOVE 'e'
 						Other->transform->position.y -= overlapY;
 						Other->transform->onGround = true;
+
+						// --- THE JUMP BOOST FIX ---
+						Other->transform->coyoteFrames = 8;
 
 						Other->transform->velocity.y = (e->transform->velocity.y < 0.0f) ? e->transform->velocity.y : 0.0f;
 						Other->transform->position.x += e->transform->velocity.x;
