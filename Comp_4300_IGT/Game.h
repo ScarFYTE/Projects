@@ -58,6 +58,51 @@ public:
 	}
 };
 
+// --- CUSTOM LINKED LIST STACK (For Audio States) ---
+struct MusicNode {
+	std::string trackPath;
+	MusicNode* next;
+	MusicNode(std::string path) : trackPath(path), next(nullptr) {}
+};
+
+class MusicStack {
+private:
+	MusicNode* topNode;
+
+public:
+	MusicStack() : topNode(nullptr) {}
+
+	~MusicStack() {
+		clear();
+	}
+
+	void push(const std::string& path) {
+		MusicNode* newNode = new MusicNode(path);
+		newNode->next = topNode;
+		topNode = newNode;
+	}
+
+	void pop() {
+		if (topNode == nullptr) return;
+		MusicNode* temp = topNode;
+		topNode = topNode->next;
+		delete temp;
+	}
+
+	std::string top() const {
+		if (topNode != nullptr) { return topNode->trackPath; }
+		return "";
+	}
+
+	bool isEmpty() const {
+		return topNode == nullptr;
+	}
+
+	void clear() {
+		while (!isEmpty()) { pop(); }
+	}
+};
+
 
 class Game {
 	// -----------------------------------------------------------------------
@@ -86,6 +131,20 @@ class Game {
 	// -----------------------------------------------------------------------
 	// Members
 	// -----------------------------------------------------------------------
+
+
+	// --- AUDIO ---
+	sf::Music bgMusic;
+	sf::SoundBuffer jumpBuffer;
+	sf::Sound jumpSound;
+	sf::SoundBuffer buttonBuffer;
+	sf::Sound buttonSound;
+
+	// --- NEW STACK MANAGER ---
+	MusicStack musicStack;
+	void PushMusic(const std::string& filepath);
+	void PopMusic();
+
 	sf::RenderWindow window;
 	sf::Font font;
 	sf::Texture p1HeartTex; // NEW

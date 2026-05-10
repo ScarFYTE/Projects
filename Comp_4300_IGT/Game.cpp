@@ -182,6 +182,13 @@ void Game::loadConfig(const std::string& path) {
 			exit->sprite = std::make_shared<CSprite>(w, h, sf::Color(255, 220, 0));
 			exit->exit_ = std::make_shared<CExit>();
 		}
+		else if (type == "Music") {
+			std::string trackName;
+			iss >> trackName;
+
+			musicStack.clear();      // Clear old state
+			PushMusic(trackName);    // Push level music
+			}
 		else {
 			// If we get an unknown token, we just ignore this specific line
 			std::cerr << "Warning: Unknown entity type in config: " << type << std::endl;
@@ -345,6 +352,7 @@ void Game::sUserInput() {
 			if (State == GameState::GameOver) {
 				if (kp->code == sf::Keyboard::Key::R) {
 					// Full restart — reload config and respawn players
+					PopMusic();
 					entityManager = EntityManager();
 					loadConfig("config.txt");
 					spawnPlayers();
@@ -798,6 +806,7 @@ void Game::sHealth() {
 
 			if (e->health->lives <= 0) {
 				State = GameState::GameOver;
+				PushMusic("gameover.ogg");
 			}
 			else {
 				StartRespawn(e->transform->position);
@@ -998,6 +1007,7 @@ void Game::sSight() {
 					player->health->lives--;
 					if (player->health->lives <= 0) {
 						State = GameState::GameOver;
+						PushMusic("gameover.ogg");
 					}
 					else {
 						StartRespawn(player->transform->position);
@@ -1117,6 +1127,41 @@ void Game::sTransition() {
 		transitionRadius += fadeSpeed;
 		if (transitionRadius >= 3000.0f) {
 			State = GameState::Playing;
+		}
+	}
+}
+
+void Game::PushMusic(const std::string& path) {
+	// If the song is already at the top of the stack, don't restart it!
+	if (!musicStack.isEmpty() && musicStack.top() == path) { return; }
+
+	musicStack.push(path);
+
+	bgMusic.stop();
+	if (bgMusic.openFromFile(path)) {
+		bgMusic.setLoop(true);
+		bgMusic.setVolume(30.f);
+		bgMusic.play();
+	}
+	else {
+		std::cerr << "Warning: Could not load music track: " << path << std::endl;
+	}
+}
+
+void Game::PopMusic() {
+	if (!musicStack.isEmpty()) {
+		musicStack.pop(); // Remove the current track
+	}
+
+	bgMusic.stop();
+
+	// If there is still a track underneath, play it!
+	if (!musicStack.isEmpty()) {
+		std::string previousTrack = musicStack.top();
+		if (bgMusic.openFromFile(previousTrack)) {
+			bgMusic.setLoop(true);
+			bgMusic.setVolume(30.f);
+			bgMusic.play();
 		}
 	}
 }
