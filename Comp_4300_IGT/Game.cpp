@@ -1032,7 +1032,7 @@ void Game::sRender() {
 
 	window.setView(window.getDefaultView());
 	if (hasBackground) {
-		backgroundSprite.setPosition(gameView.getCenter() - (gameView.getSize() * 0.5f));
+		backgroundSprite.setPosition({0.0f,0.0f});
 		window.draw(backgroundSprite);
 	}
 
