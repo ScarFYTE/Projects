@@ -241,6 +241,7 @@ void Game::loadConfig(const std::string& path) {
 				}
 
 				hasBackground = true;
+				std::cout << "BG Texture Size: " << bgTex.getSize().x << "x" << bgTex.getSize().y << std::endl;
 		}
 		else {
 			// If we get an unknown token, we just ignore this specific line
