@@ -12,9 +12,9 @@ Game::Game() {
 
 void Game::init() {
 
-	//levelQueue.enqueue("level1.txt");
+	levelQueue.enqueue("level1.txt");
 	//levelQueue.enqueue("Level2.txt");
-	levelQueue.enqueue("Level3.txt");
+	//levelQueue.enqueue("Level3.txt");
 
 	// 2. Dequeue the first level and load it
 	if (!levelQueue.isEmpty()) {

@@ -13,6 +13,7 @@ Button 326.0 508.0 12 8 jahaaz 1 0
 Platform uthja 388.0 720.0 8 32 384 672 2.5 uthja
 Platform uthja 412.0 720.0 8 32 408 672 2.5 uthja
 Button 516.0 380.0 8 8 uthja 1 1
+Music level3.ogg
 # --- TILES (From Layer: solidgeometry) ---
 Tile 400.0 400.0 32 32 Wall
 Tile 480.0 400.0 128 32 Metal_Floor
