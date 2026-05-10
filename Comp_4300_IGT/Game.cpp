@@ -45,46 +45,51 @@ void Game::init() {
 
 
 // Load Config
+#include <sstream> // MAKE SURE TO ADD THIS AT THE TOP OF GAME.CPP
+
 void Game::loadConfig(const std::string& path) {
 	std::ifstream file(path);
 	if (!file.is_open()) {
 		std::cerr << "Could not open config: " << path << std::endl;
 		return;
 	}
-	std::string type;
-	while (file >> type) {
-		if (type[0] == '#') {
-			// Comment line — consume the rest
-			std::string dummy;
-			std::getline(file, dummy);
+
+	std::string line;
+	// Read the file ONE FULL LINE at a time
+	while (std::getline(file, line)) {
+		// 1. Skip empty lines and comments safely
+		if (line.empty() || line[0] == '#' || line[0] == '\r') {
 			continue;
 		}
 
+		// 2. Turn the line into a string stream so we can extract variables from it
+		std::istringstream iss(line);
+		std::string type;
+		iss >> type; // Grab the first word (Tile, Spawn, Button, etc.)
+
+		// 3. Parse based on the type
 		if (type == "Tile") {
 			float x, y, w, h;
-			std::string texName; // NEW: Holds the file name
+			std::string texName = "ErrorTexture.png"; // Safe fallback!
 
-			// NEW: Notice we added texName to the end!
-			file >> x >> y >> w >> h >> texName;
+			// If the line is missing a texture name, this won't crash the game anymore.
+			iss >> x >> y >> w >> h >> texName;
 
 			auto tile = entityManager.AddEntity("Tile");
 			tile->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
 			tile->boundingBox = std::make_shared<CBoundingBox>(w, h);
 			tile->sprite = std::make_shared<CSprite>(w, h, sf::Color::White);
-
-			// NEW: Load the texture and pass 'true' so it repeats seamlessly
 			tile->sprite->loadTexture(texName, true);
 		}
 		else if (type == "Spawn") {
 			float p1x, p1y, p2x, p2y;
-			file >> p1x >> p1y >> p2x >> p2y;
+			iss >> p1x >> p1y >> p2x >> p2y;
 			P1_SPAWN = Vec2(p1x, p1y);
 			P2_SPAWN = Vec2(p2x, p2y);
-
 		}
 		else if (type == "Enemy") {
 			float x, y, wp1x, wp1y, wp2x, wp2y, speed, sightRange, sightAngle;
-			file >> x >> y >> wp1x >> wp1y >> wp2x >> wp2y >> speed >> sightRange >> sightAngle;
+			iss >> x >> y >> wp1x >> wp1y >> wp2x >> wp2y >> speed >> sightRange >> sightAngle;
 
 			auto enemy = entityManager.AddEntity("Enemy");
 			enemy->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
@@ -101,13 +106,13 @@ void Game::loadConfig(const std::string& path) {
 			sight->range = sightRange;
 			sight->halfAngleDeg = sightAngle;
 			enemy->sight = sight;
-
 		}
 		else if (type == "Button") {
 			float x, y, w, h;
 			std::string linkedTag;
-			int requiresStay, requiresInput; // Updated to include requiresInput
-			file >> x >> y >> w >> h >> linkedTag >> requiresStay >> requiresInput;
+			int requiresStay = 0, requiresInput = 0; // Safe defaults
+
+			iss >> x >> y >> w >> h >> linkedTag >> requiresStay >> requiresInput;
 
 			auto button = entityManager.AddEntity("Button");
 			button->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
@@ -117,14 +122,13 @@ void Game::loadConfig(const std::string& path) {
 			auto inter = std::make_shared<CInteractable>();
 			inter->linkedTag = linkedTag;
 			inter->requiresStay = (requiresStay != 0);
-			inter->requiresInput = (requiresInput != 0); // Apply the new setting
+			inter->requiresInput = (requiresInput != 0);
 			button->interactable = inter;
-
 		}
 		else if (type == "Door") {
 			std::string tag;
 			float x, y, w, h, openX, openY;
-			file >> tag >> x >> y >> w >> h >> openX >> openY;
+			iss >> tag >> x >> y >> w >> h >> openX >> openY;
 
 			auto door = entityManager.AddEntity(tag);
 			door->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
@@ -136,13 +140,12 @@ void Game::loadConfig(const std::string& path) {
 			d->openPos = Vec2(openX, openY);
 			d->savedHalfSize = Vec2(w * 0.5f, h * 0.5f);
 			door->door = d;
-
 		}
 		else if (type == "Platform") {
 			std::string tag;
 			float x, y, w, h, targetX, targetY, speed;
 			std::string linkedTag;
-			file >> tag >> x >> y >> w >> h >> targetX >> targetY >> speed >> linkedTag;
+			iss >> tag >> x >> y >> w >> h >> targetX >> targetY >> speed >> linkedTag;
 
 			auto plat = entityManager.AddEntity(tag);
 			plat->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
@@ -154,11 +157,10 @@ void Game::loadConfig(const std::string& path) {
 			mp->posB = Vec2(targetX, targetY);
 			mp->speed = speed;
 			plat->movingPlatform = mp;
-
 		}
 		else if (type == "Checkpoint") {
 			float x, y, p1sx, p1sy, p2sx, p2sy;
-			file >> x >> y >> p1sx >> p1sy >> p2sx >> p2sy;
+			iss >> x >> y >> p1sx >> p1sy >> p2sx >> p2sy;
 
 			auto cp = entityManager.AddEntity("Checkpoint");
 			cp->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
@@ -169,27 +171,23 @@ void Game::loadConfig(const std::string& path) {
 			c->p1Spawn = Vec2(p1sx, p1sy);
 			c->p2Spawn = Vec2(p2sx, p2sy);
 			cp->checkpoint = c;
-
 		}
 		else if (type == "Exit") {
 			float x, y, w, h;
-			file >> x >> y >> w >> h;
+			iss >> x >> y >> w >> h;
 
 			auto exit = entityManager.AddEntity("Exit");
 			exit->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
 			exit->boundingBox = std::make_shared<CBoundingBox>(w, h);
 			exit->sprite = std::make_shared<CSprite>(w, h, sf::Color(255, 220, 0));
 			exit->exit_ = std::make_shared<CExit>();
-
 		}
 		else {
-			// Unknown token — skip line
-			std::string dummy;
-			std::getline(file, dummy);
+			// If we get an unknown token, we just ignore this specific line
+			std::cerr << "Warning: Unknown entity type in config: " << type << std::endl;
 		}
 	}
 }
-
 // ---------------------------------------------------------------------------
 // Spawners
 // -------------------------------------------------------------------------
@@ -399,9 +397,11 @@ void Game::sInteract() {
 		if (!button->interactable || !button->boundingBox || !button->transform) { continue; }
 
 		auto& inter = button->interactable;
+		bool wasPressed = inter->isPressed;
 
 		bool anyOverlap = false;
 		bool interactPressed = false;
+		bool isHoldingInteract = false;
 
 		// 1. Check for overlap and input
 		for (auto& player : entityManager.GetEntities("Player")) {
@@ -414,30 +414,42 @@ void Game::sInteract() {
 				dy < player->boundingBox->halfSize.y + button->boundingBox->halfSize.y) {
 
 				anyOverlap = true;
+
+				// Direct check for "Holding" the key down continuously
+				if (player->GetTag() == "Player1" && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::E)) {
+					isHoldingInteract = true;
+				}
+				if (player->GetTag() == "Player2" && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RShift)) {
+					isHoldingInteract = true;
+				}
+
+				// Check for single "Toggle" press
 				if (player->input->interact) {
 					interactPressed = true;
-					std::cout << "Interact pressed on button linked to: " << inter->linkedTag << std::endl;
 					player->input->interact = false; // Consume input to prevent rapid toggling
 				}
 			}
 		}
 
-		bool wasPressed = inter->isPressed;
-
-		// 2. Handle state changes based on interaction type
-		if (inter->requiresInput) {
-			// LEVER BEHAVIOUR: Toggle on key press
+		// 2. Handle state changes based on interactable type
+		if (inter->requiresInput && inter->requiresStay) {
+			// HOLD LEVER: Must be touching AND holding the key down
+			inter->isPressed = (anyOverlap && isHoldingInteract);
+		}
+		else if (inter->requiresInput && !inter->requiresStay) {
+			// TOGGLE LEVER: Flips on/off only on a fresh key press
 			if (anyOverlap && interactPressed) {
 				inter->isPressed = !inter->isPressed;
 			}
 		}
+		else if (!inter->requiresInput && inter->requiresStay) {
+			// PRESSURE PLATE: On while standing on it, off when leaving
+			inter->isPressed = anyOverlap;
+		}
 		else {
-			// PRESSURE PLATE BEHAVIOUR: Activate on overlap
-			if (anyOverlap && !inter->isPressed) {
+			// PERMANENT PLATE: Step on it once, it stays on forever
+			if (anyOverlap) {
 				inter->isPressed = true;
-			}
-			else if (!anyOverlap && inter->requiresStay && inter->isPressed) {
-				inter->isPressed = false;
 			}
 		}
 
