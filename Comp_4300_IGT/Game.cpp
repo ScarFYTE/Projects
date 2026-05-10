@@ -220,7 +220,7 @@ void Game::loadConfig(const std::string& path) {
 		else if (type == "Background") {
 				std::string bgName;
 				iss >> bgName;
-
+				bgName += ".png"; // Assuming all backgrounds are PNGs in the same folder
 				sf::Texture& bgTex = getTexture(bgName);
 				backgroundSprite.setTexture(bgTex);
 
