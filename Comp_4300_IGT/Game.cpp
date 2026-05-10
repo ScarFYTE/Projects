@@ -1399,7 +1399,7 @@ void Game::RenderGameWon() {
 
 	sub.setCharacterSize(28);
 	sub.setFillColor(sf::Color::White);
-	sub.setString("You have conquered the Zenith Vault.");
+	sub.setString("DO NO BHAI GAYE BILLO DE GHAR");
 	sub.setPosition({ cx - sub.getLocalBounds().size.x * 0.5f, cy });
 
 	hint.setCharacterSize(22);
