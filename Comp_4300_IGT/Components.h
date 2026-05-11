@@ -9,15 +9,14 @@ public:
 	float rotation  = 0.0f;
 	bool  onGround  = false;
 
-	int coyoteFrames = 0; // Frames left to allow jump after leaving ground
-	int JumpBufferFrames = 0; // Frames left to allow jump after leaving ground
+	int coyoteFrames = 0; 
+	int JumpBufferFrames = 0;
 
 	CTransform() : position(0, 0), rotation(0), velocity(0.0f, 0.0f) {}
 	CTransform(const Vec2& pos, const Vec2& vel, float rot)
 		: position(pos), velocity(vel), rotation(rot) {}
 };
 
-// Axis-aligned bounding box (half-extents)
 class CBoundingBox {
 public:
 	Vec2 halfSize;
@@ -31,18 +30,17 @@ public:
 
 class CParticle {
 public:
-	float lifetime;    // total lifespan in frames
-	float age = 0.0f;  // how old it is
+	float lifetime;    
+	float age = 0.0f;  
 	sf::Color color;
 
 	CParticle(float lifetime, sf::Color color)
 		: lifetime(lifetime), color(color) {
 	}
 
-	float alpha() const { return 1.0f - (age / lifetime); } // Fade
+	float alpha() const { return 1.0f - (age / lifetime); } 
 };
 
-// Sprite / visual rectangle (supports optional texture)
 class CSprite {
 	sf::RectangleShape rect;
 	sf::Texture        texture;
@@ -58,7 +56,6 @@ public:
 
 		if (repeat) {
 			texture.setRepeated(true);
-			// SFML 3 requires {position}, {size} instead of x, y, w, h
 			rect.setTextureRect(sf::IntRect(
 				{ 0, 0 },
 				{ static_cast<int>(rect.getSize().x), static_cast<int>(rect.getSize().y) }
@@ -91,7 +88,7 @@ public:
 	int   maxLives;
 	int   lives;
 	bool  isDead = false;
-	int   respawnTimer = 0;     // counts down in frames
+	int   respawnTimer = 0;    
 	Vec2  spawnPoint;          
 
 	CHealth(int lives, Vec2 spawnPoint)
@@ -104,10 +101,10 @@ public:
 
 class CInteractable {
 public:
-	std::string linkedTag;       // tag of the entity this triggers
+	std::string linkedTag;       
 	bool isPressed = false;
-	bool requiresStay = true; // true = pressure plate, false = one-shot lever
-	bool requiresInput = false; // true = needs key press, false = activates on overlap
+	bool requiresStay = true; 
+	bool requiresInput = false;
 };
 
 class CDoor {

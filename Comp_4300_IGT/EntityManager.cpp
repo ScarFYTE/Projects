@@ -5,7 +5,6 @@
 
 
 void EntityManager::Update() {
-	// Move newly queued entities into the main list
 	for (auto& entity : entitiesToAdd) {
 		entities.push_back(entity);
 	}
@@ -41,11 +40,11 @@ const std::vector<std::shared_ptr<Entity>>& EntityManager::GetEntities() const {
 
 const std::vector<std::shared_ptr<Entity>> EntityManager::GetEntities(const std::string& tag) {
 
-	std::vector<std::shared_ptr<Entity>> taggedEntities; // This should be defined outside the loop to accumulate entities with the specified tag
+	std::vector<std::shared_ptr<Entity>> taggedEntities; 
 	for (auto& entity : entities) {
 		if (entity->GetTag() == tag) {
 			taggedEntities.push_back(entity);
 		}
 	}
-	return taggedEntities; // Return the vector of entities with the specified tag
+	return taggedEntities; 
 }

@@ -4,7 +4,6 @@
 #include <fstream>
 #include <iostream>
 #include <cstdint>
-// Construction / Initialization
 
 Game::Game() {
 	init();
@@ -16,7 +15,6 @@ void Game::init() {
 	levelQueue.enqueue("Level2.txt");
 	levelQueue.enqueue("Level3.txt");
 
-	// 2. Dequeue the first level and load it
 	if (!levelQueue.isEmpty()) {
 		currentLevelPath = levelQueue.front();
 		levelQueue.dequeue();
@@ -53,7 +51,6 @@ void Game::init() {
 	window.create(sf::VideoMode({ WINDOW_WIDTH, WINDOW_HEIGHT }), "2 bhai 2no Tabahi");
 	window.setFramerateLimit(60);
 	spawnPlayers();
-	// Flush the spawn queue before the first frame
 	entityManager.Update();
 	gameView = window.getDefaultView();
 
@@ -65,7 +62,7 @@ void Game::init() {
 
 
 // Load Config
-#include <sstream> // MAKE SURE TO ADD THIS AT THE TOP OF GAME.CPP
+#include <sstream>
 
 void Game::loadConfig(const std::string& path) {
 	std::ifstream file(path);
@@ -77,35 +74,29 @@ void Game::loadConfig(const std::string& path) {
 	hasBackground = false;
 
 	std::string line;
-	// Read the file ONE FULL LINE at a time
 	while (std::getline(file, line)) {
-		// 1. Skip empty lines and comments safely
 		if (line.empty() || line[0] == '#' || line[0] == '\r') {
 			continue;
 		}
 
-		// 2. Turn the line into a string stream so we can extract variables from it
 		std::istringstream iss(line);
 		std::string type;
-		iss >> type; // Grab the first word (Tile, Spawn, Button, etc.)
+		iss >> type;
 
-		// 3. Parse based on the type
 		if (type == "Tile") {
 			float x, y, w, h;
 			std::string texKey;
 
-			iss >> x >> y >> w >> h >> texKey; // Reads "Grass" or "Dirt"
+			iss >> x >> y >> w >> h >> texKey; 
 
 			auto tile = entityManager.AddEntity("Tile");
 			tile->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
 			tile->boundingBox = std::make_shared<CBoundingBox>(w, h);
 			tile->sprite = std::make_shared<CSprite>(w, h, sf::Color::White);
 
-			// APPLY TEXTURE
 			sf::Texture& tex = getTexture(texKey);
 			tile->sprite->getShape().setTexture(&tex);
 
-			// HANDLE REPEATING (For long platforms)
 			if (w > tex.getSize().x || h > tex.getSize().y) {
 				tex.setRepeated(true);
 				tile->sprite->getShape().setTextureRect(sf::IntRect({ 0, 0 }, { (int)w, (int)h }));
@@ -140,7 +131,7 @@ void Game::loadConfig(const std::string& path) {
 		else if (type == "Button") {
 			float x, y, w, h;
 			std::string linkedTag;
-			int requiresStay = 0, requiresInput = 0; // Safe defaults
+			int requiresStay = 0, requiresInput = 0; 
 
 			iss >> x >> y >> w >> h >> linkedTag >> requiresStay >> requiresInput;
 
@@ -158,22 +149,22 @@ void Game::loadConfig(const std::string& path) {
 		else if (type == "Door") {
 			std::string tag;
 			float x, y, w, h, openX, openY;
-			iss >> tag >> x >> y >> w >> h >> openX >> openY; // We still read openX/Y so Python doesn't break!
+			iss >> tag >> x >> y >> w >> h >> openX >> openY; 
 
-			auto door = entityManager.AddEntity("Door"); // Name is universally "Door" now!
+			auto door = entityManager.AddEntity("Door"); 
 			door->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
 			door->boundingBox = std::make_shared<CBoundingBox>(w, h);
-			door->sprite = std::make_shared<CSprite>(w, h, sf::Color(80, 60, 40)); // Closed door color
+			door->sprite = std::make_shared<CSprite>(w, h, sf::Color(80, 60, 40)); 
 
 			auto d = std::make_shared<CDoor>();
-			d->linkTag = tag; // Store "buttonary" here!
+			d->linkTag = tag; 
 			door->door = d;
 		}
 		else if (type == "Platform") {
 			std::string tag;
 			float x, y, w, h, targetX, targetY, speed;
 			std::string linkedTag;
-			int reqTriggers = 1; // Default fallback
+			int reqTriggers = 1; 
 
 			iss >> tag >> x >> y >> w >> h >> targetX >> targetY >> speed >> linkedTag >> reqTriggers;
 
@@ -186,7 +177,7 @@ void Game::loadConfig(const std::string& path) {
 			mp->posA = Vec2(x, y);
 			mp->posB = Vec2(targetX, targetY);
 			mp->speed = speed;
-			mp->requiredTriggers = reqTriggers; // Store the requirement
+			mp->requiredTriggers = reqTriggers; 
 			plat->movingPlatform = mp;
 		}
 		else if (type == "Checkpoint") {
@@ -217,8 +208,7 @@ void Game::loadConfig(const std::string& path) {
 			std::string trackName;
 			iss >> trackName;
 			std::cout << "Music Loaded "<< trackName<<std::endl;
-			//musicStack.clear();      // Clear old state
-			PushMusic(trackName);    // Push level music
+			PushMusic(trackName);  
 			}
 		else if (type == "Background") {
 				std::string bgName;
@@ -232,11 +222,8 @@ void Game::loadConfig(const std::string& path) {
 
 				sf::Texture& bgTex = getTexture(bgName);
 
-				// --- THE FIX IS RIGHT HERE ---
-				// Adding 'true' forces the sprite to open its 0x0 peephole 
-				// to the full size of the new image!
+				
 				backgroundSprite.setTexture(bgTex, true);
-				// -----------------------------
 
 				if (bgTex.getSize().x > 0 && bgTex.getSize().y > 0) {
 					float scaleX = static_cast<float>(WINDOW_WIDTH) / bgTex.getSize().x;
@@ -247,19 +234,16 @@ void Game::loadConfig(const std::string& path) {
 				hasBackground = true;
 				}
 		else {
-			// If we get an unknown token, we just ignore this specific line
 			std::cerr << "Warning: Unknown entity type in config: " << type << std::endl;
 		}
 	}
 }
-// ---------------------------------------------------------------------------
-// Spawners
-// -------------------------------------------------------------------------
+
+
 void Game::spawnDustParticles(Vec2 position, int count, float directionX) {
 	for (int i = 0; i < count; i++) {
 		auto p = entityManager.AddEntity("Particle");
 
-		// If directionX given, bias particles that way (skid kicks backwards)
 		float biasX = (directionX != 0.0f) ? directionX * 1.5f : 0.0f;
 		float vx = biasX + ((rand() % 200) - 100) / 100.0f;
 		float vy = -((rand() % 150) + 30) / 100.0f;
@@ -286,7 +270,6 @@ void Game::spawnPlayers() {
 	const float groundTop = static_cast<float>(WINDOW_HEIGHT) - GROUND_H;
 	const float spawnY = groundTop - PLAYER_H * 0.5f;
 
-	// --- Player 1 (WASD) --- blue box, left side
 	player1 = entityManager.AddEntity("Player");
 	player1->transform = std::make_shared<CTransform>(P1_SPAWN, Vec2(0.0f, 0.0f), 0.0f);
 	player1->boundingBox = std::make_shared<CBoundingBox>(PLAYER_W, PLAYER_H);
@@ -294,7 +277,6 @@ void Game::spawnPlayers() {
 	player1->input = std::make_shared<CInput>();
 	player1->health = std::make_shared<CHealth>();
 
-	// --- Player 2 (Arrow keys) --- red box, right side
 	player2 = entityManager.AddEntity("Player");
 	player2->transform = std::make_shared<CTransform>(P2_SPAWN, Vec2(0.0f, 0.0f), 0.0f);
 	player2->boundingBox = std::make_shared<CBoundingBox>(PLAYER_W, PLAYER_H);
@@ -328,14 +310,11 @@ void Game::Run() {
 	}
 }
 
-// Systems
 void Game::sCamera() {
 
-	// Only consider living players for camera calculation
 	bool p1Alive = player1->transform && !player1->health->isDead;
 	bool p2Alive = player2->transform && !player2->health->isDead;
 
-	// Neither alive — freeze camera where it is
 	if (!p1Alive && !p2Alive) { return; }
 
 	float cx, cy, viewW, viewH;
@@ -344,24 +323,17 @@ void Game::sCamera() {
 		Vec2 p1 = player1->transform->position;
 		Vec2 p2 = player2->transform->position;
 
-		// 1. Midpoint (The Point of Interest)
 		cx = (p1.x + p2.x) / 2.0f;
 		cy = (p1.y + p2.y) / 2.0f;
 
-		// 2. Tighter Distances & Padding
-		// Reduced padding to 120 so players aren't lost in the middle
 		float dx = std::abs(p1.x - p2.x) + 120.f;
 		float dy = std::abs(p1.y - p2.y) + 120.f;
 
 		float aspect = static_cast<float>(WINDOW_HEIGHT) / WINDOW_WIDTH;
 
-		// 3. SET YOUR ZOOM LIMITS HERE
-		// minViewW = 800 means when you are close, the camera zooms in 
-		// until the screen only covers 800 pixels of the world.
 		float minViewW = 800.f;
 		float minViewH = minViewW * aspect;
 
-		// 4. Calculate required width/height based on player spread
 		if (dy > dx * aspect) {
 			viewH = std::max(minViewH, dy);
 			viewW = viewH / aspect;
@@ -371,14 +343,12 @@ void Game::sCamera() {
 			viewH = viewW * aspect;
 		}
 
-		// 5. MAX ZOOM CAP (Keep this so they don't look like ants)
 		if (viewW > 2200.f) {
 			viewW = 2200.f;
 			viewH = 2200.f * aspect;
 		}
 	}
 	else {
-		// One player dead 
 		Vec2 pos = p1Alive ? player1->transform->position
 			: player2->transform->position;
 		cx = pos.x;
@@ -387,7 +357,6 @@ void Game::sCamera() {
 		viewH = static_cast<float>(WINDOW_HEIGHT);
 	}
 
-	// Smooth lerp so camera doesn't snap
 	sf::Vector2f current = gameView.getCenter();
 	sf::Vector2f target = { cx, cy };
 	gameView.setCenter(current + (target - current) * 0.1f);
@@ -432,7 +401,6 @@ void Game::sUserInput() {
 
 			if (State == GameState::GameOver) {
 				if (kp->code == sf::Keyboard::Key::R) {
-					// Full restart — reload config and respawn players
 					PopMusic();
 					entityManager = EntityManager();
 					
@@ -457,12 +425,10 @@ void Game::sUserInput() {
 					kp->code == sf::Keyboard::Key::Space ||
 					kp->code == sf::Keyboard::Key::Escape) {
 
-					// Return to Main Menu and reset the queue for a new playthrough!
 					State = GameState::StartMenu;
 					SelectedOption = 0;
 
-					// Re-populate the queue so they can play again
-					levelQueue.enqueue("Level3.txt"); // Add your levels back here
+					levelQueue.enqueue("Level3.txt"); 
 				}
 				return;
 			}
@@ -504,7 +470,6 @@ void Game::sInteract() {
 	for (auto& player : entityManager.GetEntities("Player")) {
 		if (!player->transform || !player->boundingBox) { continue; }
 
-		// Did the player press 'E' or 'RShift' this exact frame?
 		if (player->input->interact) {
 			for (auto& door : entityManager.GetEntities("Door")) {
 				if (!door->door || !door->door->isOpen || !door->transform || !door->boundingBox) { continue; }
@@ -512,21 +477,18 @@ void Game::sInteract() {
 				float dx = std::abs(player->transform->position.x - door->transform->position.x);
 				float dy = std::abs(player->transform->position.y - door->transform->position.y);
 
-				// If the player is standing on an OPEN door
 				if (dx < player->boundingBox->halfSize.x + door->boundingBox->halfSize.x &&
 					dy < player->boundingBox->halfSize.y + door->boundingBox->halfSize.y) {
 
-					// Find the matching destination door
 					for (auto& targetDoor : entityManager.GetEntities("Door")) {
 						if (targetDoor != door && targetDoor->door->linkTag == door->door->linkTag) {
 
-							// Teleport the player!
 							player->transform->position = targetDoor->transform->position;
-							player->input->interact = false; // Consume the input so they don't teleport back instantly
-							break; // Only teleport once
+							player->input->interact = false; 
+							break;
 						}
 					}
-					break; // Stop checking other doors for this player
+					break; 
 				}
 			}
 		}
@@ -541,7 +503,6 @@ void Game::sInteract() {
 		bool interactPressed = false;
 		bool isHoldingInteract = false;
 
-		// 1. Check for overlap and input
 		for (auto& player : entityManager.GetEntities("Player")) {
 			if (!player->transform || !player->boundingBox) { continue; }
 
@@ -553,7 +514,6 @@ void Game::sInteract() {
 
 				anyOverlap = true;
 
-				// Direct check for "Holding" the key down continuously
 				if (player == player1 && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::E)) {
 					isHoldingInteract = true;
 				}
@@ -561,47 +521,37 @@ void Game::sInteract() {
 					isHoldingInteract = true;
 				}
 
-				// Check for single "Toggle" press
 				if (player->input->interact) {
 					interactPressed = true;
-					player->input->interact = false; // Consume input to prevent rapid toggling
+					player->input->interact = false; 
 				}
 			}
 		}
 
-		// 2. Handle state changes based on interactable type
 		if (inter->requiresInput && inter->requiresStay) {
-			// HOLD LEVER: Must be touching AND holding the key down
 			inter->isPressed = (anyOverlap && isHoldingInteract);
 		}
 		else if (inter->requiresInput && !inter->requiresStay) {
-			// TOGGLE LEVER: Flips on/off only on a fresh key press
 			if (anyOverlap && interactPressed) {
 				inter->isPressed = !inter->isPressed;
 			}
 		}
 		else if (!inter->requiresInput && inter->requiresStay) {
-			// PRESSURE PLATE: On while standing on it, off when leaving
 			inter->isPressed = anyOverlap;
 		}
 		else {
-			// PERMANENT PLATE: Step on it once, it stays on forever
 			if (anyOverlap) {
 				inter->isPressed = true;
 			}
 		}
 			
-		// 3. Trigger linked entities (Doors, Platforms)
-		// 3. Trigger linked entities (Doors, Platforms)
 		if (inter->isPressed != wasPressed) {
 			buttonSound.play();
 
 			for (auto& ent : entityManager.GetEntities()) {
 
-				// Kim china - Multi-trigger logic for Platforms
 				if (ent->movingPlatform && ent->GetTag() == inter->linkedTag) {
 
-					// Add or remove a trigger count based on the button's new state
 					if (inter->isPressed) {
 						ent->movingPlatform->currentTriggers++;
 					}
@@ -609,16 +559,13 @@ void Game::sInteract() {
 						ent->movingPlatform->currentTriggers--;
 					}
 
-					// Only activate the platform if we hit the required threshold
 					ent->movingPlatform->triggered =
 						(ent->movingPlatform->currentTriggers >= ent->movingPlatform->requiredTriggers);
 				}
 
-				// Doors (Now check their internal linkTag!)
 				if (ent->door && ent->door->linkTag == inter->linkedTag) {
 					ent->door->isOpen = inter->isPressed;
 
-					// Change color based on state (Dark portal vs Brown wood)
 					ent->sprite->getShape().setFillColor(
 						ent->door->isOpen ? sf::Color(20, 20, 20) : sf::Color(80, 60, 40)
 					);
@@ -626,7 +573,6 @@ void Game::sInteract() {
 			}
 		}
 
-		// 4. Visual Feedback
 		if (button->sprite) {
 			button->sprite->getShape().setFillColor(
 				inter->isPressed ? sf::Color(0, 200, 100) : sf::Color(200, 100, 0)
@@ -657,7 +603,6 @@ void Game::RenderStartMenu() {
 	opt1.setFillColor(SelectedOption == 1 ? sf::Color::Yellow : sf::Color(160, 160, 160));
 	opt1.setPosition({ cx - opt1.getLocalBounds().size.x * 0.5f, cy + 60.f });
 
-	// Arrow indicator next to selected option
 	sf::Text arrow(font);
 	arrow.setCharacterSize(30);
 	arrow.setFillColor(sf::Color::Yellow);
@@ -709,7 +654,7 @@ void Game::sGravity() {
 
 		t->onGround = false;
 		if (wasOnGround && !t->onGround && t->velocity.y >= 0.0f) {
-			t->coyoteFrames = 8;  // 8 frames of window to still allow jump after leaving ground
+			t->coyoteFrames = 8;  
 		}
 
 		t->velocity.y += GRAVITY;
@@ -726,7 +671,6 @@ void Game::sMovement() {
 		auto& t = e->transform;
 		auto& in = e->input;
 
-		// --- Jump buffer ---
 		if (in->jump) {
 			t->JumpBufferFrames = 8;
 			in->jump = false;
@@ -737,14 +681,10 @@ void Game::sMovement() {
 		bool canJump = t->onGround || t->coyoteFrames > 0;
 		if (t->JumpBufferFrames > 0 && canJump) {
 
-			// --- THE JUMP BOOST UPGRADE ---
 			if (t->velocity.y < 0.0f) {
-				// If you are already being carried UPWARDS by a player or moving platform,
-				// we ADD the jump force so you actually launch off of them!
 				t->velocity.y += JUMP_VELOCITY;
 			}
 			else {
-				// Normal jump from flat ground or when falling
 				t->velocity.y = JUMP_VELOCITY;
 			}
 			// ------------------------------
@@ -760,24 +700,19 @@ void Game::sMovement() {
 			jumpSound.play();
 		}
 
-		// --- Horizontal acceleration ---
 		bool pushingLeft = in->left && !in->right;
 		bool pushingRight = in->right && !in->left;
 
-		// Direction change — player is moving one way and input is the other
 		bool turningLeft = pushingLeft && t->velocity.x > 0.5f;
 		bool turningRight = pushingRight && t->velocity.x < -0.5f;
 		bool turning = turningLeft || turningRight;
 
 		if (turning) {
-			// Skid: decelerate faster + spawn directional dust
 			t->velocity.x *= TURN_FRICTION;
 
-			// Dust only on first frame of turn (avoid spamming every frame)
 			if (std::abs(t->velocity.x) > 1.5f) {
 				Vec2 dustPos = Vec2(t->position.x, t->position.y + e->boundingBox->halfSize.y);
-				// In the turning block — kick dust opposite to velocity (backwards from skid)
-				float skidDir = (t->velocity.x > 0.0f) ? 1.0f : -1.0f; // same dir as movement
+				float skidDir = (t->velocity.x > 0.0f) ? 1.0f : -1.0f; 
 				spawnDustParticles(dustPos, 5, skidDir);
 			}
 
@@ -791,19 +726,15 @@ void Game::sMovement() {
 
 		}
 		else {
-			// No input — apply friction
 			t->velocity.x *= FRICTION;
 
-			// Stop completely below threshold to prevent infinite sliding
 			if (std::abs(t->velocity.x) < 0.15f) {
 				t->velocity.x = 0.0f;
 			}
 		}
 
-		// Cap horizontal speed
 		t->velocity.x = std::clamp(t->velocity.x, -MAX_MOVE_SPEED, MAX_MOVE_SPEED);
 
-		// Apply movement
 		t->position.x += t->velocity.x;
 		t->position.y += t->velocity.y;
 	}
@@ -818,23 +749,18 @@ void Game::sCollision() {
 		const float hw = e->boundingBox->halfSize.x;
 		const float hh = e->boundingBox->halfSize.y;
 
-		//Tiles
-		// --- SOLID GEOMETRY COLLISION ---
 		std::vector<std::shared_ptr<Entity>> solidEntities;
 
-		// 1. Grab all standard static Tiles
 		for (auto& tile : entityManager.GetEntities("Tile")) {
 			solidEntities.push_back(tile);
 		}
 
-		// 2. Grab all dynamic geometry (Platforms)
 		for (auto& ent : entityManager.GetEntities()) {
 			if (ent->movingPlatform) {
 				solidEntities.push_back(ent);
 			}
 		}
 
-		// 3. Resolve collisions against all gathered solid objects
 		for (auto& geo : solidEntities) {
 			if (!geo->transform || !geo->boundingBox) { continue; }
 			const float geoHW = geo->boundingBox->halfSize.x;
@@ -845,12 +771,10 @@ void Game::sCollision() {
 			if (std::abs(e->transform->position.x - geoX) < hw + geoHW &&
 				std::abs(e->transform->position.y - geoY) < hh + geoHH) {
 
-				// Simple collision push the player out of the geometry
 				float overlapX = (hw + geoHW) - std::abs(e->transform->position.x - geoX);
 				float overlapY = (hh + geoHH) - std::abs(e->transform->position.y - geoY);
 
 				if (overlapX < overlapY) {
-					// horizontal collision
 					if (e->transform->position.x < geoX) {
 						e->transform->position.x -= overlapX;
 					}
@@ -860,11 +784,9 @@ void Game::sCollision() {
 					e->transform->velocity.x = 0.0f;
 				}
 				else {
-					// vertical collision
 					if (e->transform->position.y < geoY) {
 						e->transform->position.y -= overlapY;
 
-						// Only spawn dust if actually falling onto the object (not bonking head)
 						if (!e->transform->onGround && e->transform->velocity.y > 1.0f) {
 							spawnDustParticles(Vec2(e->transform->position.x,
 								e->transform->position.y + e->boundingBox->halfSize.y), 6);
@@ -878,8 +800,6 @@ void Game::sCollision() {
 				}
 			}
 		}
-		// --- END SOLID GEOMETRY COLLISION ---
-		// --- PLAYER vs PLAYER COLLISION ---
 		for (auto& Other : entityManager.GetEntities("Player")) {
 
 			if (e.get() >= Other.get()) { continue; }
@@ -897,45 +817,35 @@ void Game::sCollision() {
 				float overlapX = (hw + otherHW) - std::abs(dx);
 				float overlapY = (hh + otherHH) - std::abs(dy);
 
-				// INCREASED BIAS to 16.0f: Heavily favors standing on heads so you don't slip off the edge!
 				if (overlapY < overlapX + 16.0f) {
 
-					// --- VERTICAL COLLISION (Someone is on top) ---
 					if (dy < 0.0f) {
-						// 'e' is ABOVE 'Other'
 						e->transform->position.y -= overlapY;
 						e->transform->onGround = true;
 						e->transform->coyoteFrames = 8;
 
-						// THE JUMP FIX: ONLY stop their Y velocity if they are FALLING (> 0).
-						// If they are jumping (< 0), leave their -8.0f velocity alone!
 						if (e->transform->velocity.y > 0.0f) {
 							e->transform->velocity.y = (Other->transform->velocity.y < 0.0f) ? Other->transform->velocity.y : 0.0f;
 						}
 
-						// CARRY MECHANIC: Move the top player perfectly with the bottom player
 						e->transform->position.x += Other->transform->velocity.x;
 
 					}
 					else {
-						// 'Other' is ABOVE 'e'
 						Other->transform->position.y -= overlapY;
 						Other->transform->onGround = true;
 						Other->transform->coyoteFrames = 8;
 
-						// THE JUMP FIX: ONLY stop their Y velocity if they are FALLING
 						if (Other->transform->velocity.y > 0.0f) {
 							Other->transform->velocity.y = (e->transform->velocity.y < 0.0f) ? e->transform->velocity.y : 0.0f;
 						}
 
-						// CARRY MECHANIC
 						Other->transform->position.x += e->transform->velocity.x;
 					}
 
 				}
 				else {
 
-					// --- HORIZONTAL COLLISION (Bumping shoulders) ---
 					if (dx < 0.0f) {
 						e->transform->position.x -= overlapX * 0.5f;
 						Other->transform->position.x += overlapX * 0.5f;
@@ -945,13 +855,11 @@ void Game::sCollision() {
 						Other->transform->position.x -= overlapX * 0.5f;
 					}
 
-					// Cut speed so they don't endlessly push into each other
 					e->transform->velocity.x *= 0.5f;
 					Other->transform->velocity.x *= 0.5f;
 				}
 			}
 		}
-		// --- END PLAYER vs PLAYER ---
 	}
 }
 void Game::sParticle() {
@@ -968,12 +876,10 @@ void Game::sParticle() {
 			continue;
 		}
 
-		// Light gravity — floatier than players
 		t->velocity.y += 0.08f;
 		t->position.x += t->velocity.x;
 		t->position.y += t->velocity.y;
 
-		// Fade out
 		sf::Color c = p->color;
 		c.a = static_cast<std::uint8_t>(p->alpha() * 255);
 		e->sprite->getShape().setFillColor(c);
@@ -984,7 +890,6 @@ void Game::sHealth() {
 	for (auto& e : entityManager.GetEntities("Player")) {
 		if (!e->health || !e->transform) { continue; }
 
-		// If a player falls off the map
 		if (e->transform->position.y > WINDOW_HEIGHT + 100.0f) {
 			e->health->lives--;
 
@@ -995,13 +900,12 @@ void Game::sHealth() {
 			else {
 				StartRespawn(e->transform->position);
 			}
-			return; // Stop checking so we don't double-trigger
+			return;
 		}
 	}
 }
 
 void Game::RenderHud() {
-	// 1. Setup the text for the player labels ("P1:" and "P2:")
 	sf::Text p1Text(font), p2Text(font);
 	p1Text.setCharacterSize(24);
 	p2Text.setCharacterSize(24);
@@ -1012,30 +916,25 @@ void Game::RenderHud() {
 	p2Text.setString("P2:");
 
 	p1Text.setPosition({ 20.f, 20.f });
-	p2Text.setPosition({ 20.f, 60.f }); // Moved P2 down slightly to fit the images
+	p2Text.setPosition({ 20.f, 60.f }); 
 
 	window.draw(p1Text);
 	window.draw(p2Text);
 
-	// 2. Setup the heart sprites
 	sf::Sprite p1Heart(p1HeartTex);
 	sf::Sprite p2Heart(p2HeartTex);
 
 	p1Heart.setScale({0.05f, 0.05f});
 	p2Heart.setScale({0.05f, 0.05f});
 
-	// How far apart each heart should be spaced (adjust this based on your image size!)
 	float heartSpacing = 40.0f;
-	// How far to the right of the "P1:" text to start drawing hearts
 	float startXOffset = 60.0f;
 
-	// 3. Draw Player 1 Hearts
 	for (int i = 0; i < player1->health->lives; i++) {
 		p1Heart.setPosition({ p1Text.getPosition().x + startXOffset + (i * heartSpacing), 20.f });
 		window.draw(p1Heart);
 	}
 
-	// 4. Draw Player 2 Hearts
 	for (int i = 0; i < player2->health->lives; i++) {
 		p2Heart.setPosition({ p2Text.getPosition().x + startXOffset + (i * heartSpacing), 60.f });
 		window.draw(p2Heart);
@@ -1045,12 +944,9 @@ void Game::RenderHud() {
 void Game::sRender() {
 	window.clear(sf::Color(30, 30, 50));
 
-	// --- 1. THE STATIC LAYER (UI and Background) ---
-	// We use the Default View so coordinates are always (0,0) to (1280,720)
 	window.setView(window.getDefaultView());
 
 	if (hasBackground) {
-		// Force the background to the top-left of the screen
 		backgroundSprite.setPosition({ 0.f, 0.f });
 		window.draw(backgroundSprite);
 	}
@@ -1080,7 +976,6 @@ void Game::sRender() {
 
 	window.setView(window.getDefaultView());
 
-	// Playing
 	window.setView(gameView);
 	for (auto& e : entityManager.GetEntities()) {
 		if (e->transform && e->sprite) {
@@ -1091,7 +986,6 @@ void Game::sRender() {
 
 	sParticle();
 
-	// NEW CIRCULAR WIPE
 	if (State == GameState::RespawnFadeOut || State == GameState::RespawnFadeIn) {
 		sf::CircleShape wipeCircle;
 		float r = std::max(0.0f, transitionRadius);
@@ -1099,9 +993,9 @@ void Game::sRender() {
 		wipeCircle.setOrigin({ r, r });
 		wipeCircle.setPosition({ transitionCenter.x, transitionCenter.y });
 		
-		wipeCircle.setFillColor(sf::Color::Transparent); // Hole in the middle
+		wipeCircle.setFillColor(sf::Color::Transparent); 
 		wipeCircle.setOutlineColor(sf::Color::Black);
-		wipeCircle.setOutlineThickness(4000.0f);         // Massive outline covers the screen
+		wipeCircle.setOutlineThickness(4000.0f);      
 
 		window.draw(wipeCircle);
 	}
@@ -1131,7 +1025,7 @@ void Game::sMovingPlatform() {
 			e->transform->position += moveAmount;
 		}
 		else {
-			moveAmount = target - current; // Exact distance left to snap
+			moveAmount = target - current; 
 			e->transform->position = target;
 		}
 
@@ -1145,7 +1039,6 @@ void Game::sMovingPlatform() {
 			float playerX = player->transform->position.x;
 
 			if (std::abs(playerBottom - platTop) < 3.0f && playerX > platLeft && playerX < platRight) {
-				// Apply the exact same movement to the player
 				player->transform->position += moveAmount;
 			}
 		}
@@ -1166,12 +1059,10 @@ void Game::sPatrol() {
 		float dist = std::sqrt(delta.x * delta.x + delta.y * delta.y);
 
 		if (dist < 4.0f) {
-			// Reached waypoint — advance and loop back to 0
 			patrol->currentTarget =
 				(patrol->currentTarget + 1) % static_cast<int>(patrol->waypoints.size());
 		}
 		else {
-			// Normalize and move
 			Vec2 dir = delta * (1.0f / dist);
 			t->position += dir * patrol->speed;
 			patrol->facingRight = (dir.x > 0.0f);
@@ -1187,7 +1078,6 @@ void Game::sSight() {
 		auto& sight = enemy->sight;
 		Vec2  enemyPos = enemy->transform->position;
 
-		// Facing direction comes from patrol if available
 		Vec2 facing = { 1.0f, 0.0f };
 		if (enemy->patrol) {
 			facing = enemy->patrol->facingRight
@@ -1217,7 +1107,7 @@ void Game::sSight() {
 					else {
 						StartRespawn(player->transform->position);
 					}
-					return; // Stop processing
+					return;
 				}
 			}
 		}
@@ -1228,20 +1118,18 @@ void Game::StartRespawn(Vec2 focusPoint) {
 	if (State == GameState::RespawnFadeOut || State == GameState::RespawnFadeIn) { return; }
 
 	State = GameState::RespawnFadeOut;
-	transitionCenter = focusPoint;  // Center the wipe on the player who died
-	transitionRadius = 3000.0f;     // Start massive to cover the zoomed-out camera
+	transitionCenter = focusPoint;  
+	transitionRadius = 3000.0f;     
 
-	isLoadingNextLevel = false;     // We are respawning, not advancing the level
+	isLoadingNextLevel = false;     
 }
 
 void Game::ApplyReset() {
-	// Teleport both players back to the start
 	player1->transform->position = P1_SPAWN;
 	player1->transform->velocity = { 0.0f, 0.0f };
 	player2->transform->position = P2_SPAWN;
 	player2->transform->velocity = { 0.0f, 0.0f };
 
-	// Move the circle focus to the middle of the spawn points for the fade-in
 	transitionCenter = Vec2((P1_SPAWN.x + P2_SPAWN.x) * 0.5f, (P1_SPAWN.y + P2_SPAWN.y) * 0.5f);
 	State = GameState::RespawnFadeIn;
 }
@@ -1266,15 +1154,12 @@ void Game::sWinCondition() {
 			}
 		}
 
-		// If BOTH players are touching the exit
 		if (playersAtExit >= 2) {
-			// Trigger the screen wipe, and pass 'true' to signal a level advance
 			StartWipe(exit->transform->position, true);
 		}
 	}
 }
 void Game::LoadNextLevel() {
-	// 1. Check if we beat the last level
 	if (levelQueue.isEmpty()) {
 		State = GameState::GameWon;
 
@@ -1282,23 +1167,17 @@ void Game::LoadNextLevel() {
 		return;
 	}
 
-	// 2. Pop the next level from the queue and cache it
 	currentLevelPath = levelQueue.front();
 	levelQueue.dequeue();
 
-	// 3. Wipe all current entities from memory
 	entityManager = EntityManager();
 
-	// 4. Load the new level map
 	loadConfig(currentLevelPath);
 
-	// 5. Respawn the players at the new P1/P2 Spawn coordinates
 	spawnPlayers();
 
-	// 6. Force the entity manager to process the spawns immediately
 	entityManager.Update();
 
-	// 7. Setup the fade-in animation
 	transitionCenter = Vec2((P1_SPAWN.x + P2_SPAWN.x) * 0.5f, (P1_SPAWN.y + P2_SPAWN.y) * 0.5f);
 	State = GameState::RespawnFadeIn;
 }
@@ -1310,24 +1189,22 @@ void Game::StartWipe(Vec2 focusPoint, bool advancingLevel) {
 	transitionCenter = focusPoint;
 	transitionRadius = 3000.0f;
 
-	// Store WHY we are wiping the screen
 	isLoadingNextLevel = advancingLevel;
 }
 
 void Game::sTransition() {
-	float fadeSpeed = 70.0f; // Adjust this to make the wipe faster/slower
+	float fadeSpeed = 70.0f; 
 
 	if (State == GameState::RespawnFadeOut) {
 		transitionRadius -= fadeSpeed;
 		if (transitionRadius <= 0.0f) {
 			transitionRadius = 0.0f;
 
-			// --- NEW SPLIT LOGIC ---
 			if (isLoadingNextLevel) {
-				LoadNextLevel(); // You hit the exit, advance the queue!
+				LoadNextLevel(); 
 			}
 			else {
-				ApplyReset();    // You died, just teleport to start!
+				ApplyReset();    
 			}
 			// -----------------------
 		}
@@ -1341,7 +1218,6 @@ void Game::sTransition() {
 }
 
 void Game::PushMusic(const std::string& path) {
-	// If the song is already at the top of the stack, don't restart it!
 	if (!musicStack.isEmpty() && musicStack.top() == path) { return; }
 
 	musicStack.push(path);
@@ -1359,12 +1235,11 @@ void Game::PushMusic(const std::string& path) {
 
 void Game::PopMusic() {
 	if (!musicStack.isEmpty()) {
-		musicStack.pop(); // Remove the current track
+		musicStack.pop(); 
 	}
 
 	bgMusic.stop();
 
-	// If there is still a track underneath, play it!
 	if (!musicStack.isEmpty()) {
 		std::string previousTrack = musicStack.top();
 		if (bgMusic.openFromFile(previousTrack)) {
@@ -1383,16 +1258,12 @@ sf::Texture& Game::getTexture(const std::string& name) {
 
 	std::string path = "Textures/" + name + ".png";
 
-	// Try to load the texture
 	if (!textureCache[name].loadFromFile(path)) {
 		std::cerr << "!!! ERROR: Could not find " << path << " !!!" << std::endl;
 
-		// CREATE A PINK FALLBACK
-		// SFML 3 Fix #1: Use 'resize' instead of 'create'
 		sf::Image pinkImage;
 		pinkImage.resize({ 2, 2 }, sf::Color::Magenta);
 
-		// SFML 3 Fix #2: We must store the true/false result to satisfy [[nodiscard]]
 		bool fallbackLoaded = textureCache[name].loadFromImage(pinkImage);
 		if (!fallbackLoaded) {
 			std::cerr << "Failed to generate fallback texture!" << std::endl;
@@ -1409,7 +1280,7 @@ void Game::RenderGameWon() {
 	sf::Text over(font), sub(font), hint(font);
 
 	over.setCharacterSize(56);
-	over.setFillColor(sf::Color(255, 215, 0)); // Gold color!
+	over.setFillColor(sf::Color(255, 215, 0)); 
 	over.setString("VICTORY!");
 	over.setPosition({ cx - over.getLocalBounds().size.x * 0.5f, cy - 120.f });
 

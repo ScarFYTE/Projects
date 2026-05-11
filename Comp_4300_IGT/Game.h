@@ -13,7 +13,6 @@ enum class GameState {
 	RespawnFadeIn
 };
 
-// --- CUSTOM LINKED LIST QUEUE ---
 struct LevelNode {
 	std::string levelPath;
 	LevelNode* next;
@@ -60,7 +59,6 @@ public:
 	}
 };
 
-// --- CUSTOM LINKED LIST STACK (For Audio States) ---
 struct MusicNode {
 	std::string trackPath;
 	MusicNode* next;
@@ -122,9 +120,6 @@ public:
 
 
 class Game {
-	// -----------------------------------------------------------------------
-	// Constants
-	// -----------------------------------------------------------------------
 	static constexpr unsigned int WINDOW_WIDTH  = 1280;
 	static constexpr unsigned int WINDOW_HEIGHT = 720;
 	static constexpr float GRAVITY        =  0.5f;
@@ -134,46 +129,39 @@ class Game {
 	static constexpr float PLAYER_W       =  24.0f;
 	static constexpr float PLAYER_H       =  24.0f;
 	static constexpr float GROUND_H       =  20.0f;
-	static constexpr float ACCELERATION = 0.8f;  // speed gained per frame
-	static constexpr float FRICTION = 0.75f; // multiplier when no input (0-1, lower = more friction)
-	static constexpr float TURN_FRICTION = 0.55f; // multiplier on direction change (faster stop)
-	static constexpr float MAX_MOVE_SPEED = 7.0f;  // replaces MOVE_SPEED for horizontal cap
+	static constexpr float ACCELERATION = 0.8f;  
+	static constexpr float FRICTION = 0.75f; 
+	static constexpr float TURN_FRICTION = 0.55f; 
+	static constexpr float MAX_MOVE_SPEED = 7.0f;  
 	Vec2 P1_SPAWN = Vec2(WINDOW_WIDTH * 0.25f, WINDOW_HEIGHT - GROUND_H - PLAYER_H * 0.5f);
 	Vec2 P2_SPAWN = Vec2(WINDOW_WIDTH * 0.5f, WINDOW_HEIGHT - GROUND_H - PLAYER_H * 0.5f);
 
 	
 
 
-
-	// -----------------------------------------------------------------------
-	// Members
-	// -----------------------------------------------------------------------
-
-	// --- AUDIO ---
 	sf::Music bgMusic;
 
 	sf::SoundBuffer jumpBuffer;
-	sf::Sound jumpSound{ jumpBuffer }; // SFML 3 Fix: Attach buffer immediately
+	sf::Sound jumpSound{ jumpBuffer }; 
 
 	sf::SoundBuffer buttonBuffer;
-	sf::Sound buttonSound{ buttonBuffer }; // SFML 3 Fix: Attach buffer immediately
+	sf::Sound buttonSound{ buttonBuffer };
 
-	// --- NEW STACK MANAGER ---
 	MusicStack musicStack;
 	void PushMusic(const std::string& filepath);
 	void PopMusic();
 
 	sf::RenderWindow window;
 	sf::Font font;
-	sf::Texture p1HeartTex; // NEW
-	sf::Texture p2HeartTex; // NEW
+	sf::Texture p1HeartTex;
+	sf::Texture p2HeartTex;
 
 	std::map<std::string, sf::Texture> textureCache;
 	sf::Texture& getTexture(const std::string& name);
 	
 	
-	sf::Texture dummyBgTex;                     // 1. Create an empty texture
-	sf::Sprite backgroundSprite{ dummyBgTex };  // 2. Feed it to the sprite instantly!
+	sf::Texture dummyBgTex;                     
+	sf::Sprite backgroundSprite{ dummyBgTex };
 	bool hasBackground = false;
 
 	LevelQueue  levelQueue;
@@ -196,9 +184,6 @@ class Game {
 	GameState State = GameState::StartMenu;
 	int SelectedOption = 0; // 0 = play, 1 = exit
 
-	// -----------------------------------------------------------------------
-	// Internal helpers
-	// -----------------------------------------------------------------------
 	void init();
 	void loadConfig(const std::string& path);
 	void spawnGround();
