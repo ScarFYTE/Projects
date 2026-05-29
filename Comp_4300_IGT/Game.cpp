@@ -1,47 +1,87 @@
 #include "Game.h"
+#include <optional>
+#include <SFML/Graphics.hpp>
 #include <fstream>
-#include<optional>
-#include<SFML/Graphics.hpp>
-#include<iostream>
-#include<cmath>
+#include <iostream>
 #include <cstdint>
 
-// Magic numbers as constants
-namespace GameConfig {
-	constexpr unsigned int WINDOW_WIDTH = 1280;
-	constexpr unsigned int WINDOW_HEIGHT = 720;
-	constexpr unsigned int FRAMERATE_LIMIT = 60;
-	constexpr int ENEMY_SPAWN_INTERVAL = 90;
-	constexpr int SPECIAL_WEAPON_DURATION = 180;
-	constexpr int SPECIAL_WEAPON_SPAWN_RATE = 10;
-	constexpr int SPECIAL_WEAPON_COOLDOWN = 1800;
-	constexpr float SPECIAL_WEAPON_RADIUS = 100.0f;
-	constexpr float ENEMY_SPAWN_BUFFER = 100.0f;
-	constexpr float ENEMY_SPAWN_OFFSET = 150.0f;
-	constexpr float ENTITY_ROTATION_SPEED = 3.0f;
-	constexpr int SCORE_PER_KILL = 10;
-	constexpr std::uint8_t MAX_ALPHA = 255;
+Game::Game() {
+	init();
 }
 
-// ---------------------------------------------------------------------------
-// Initialization
-// ---------------------------------------------------------------------------
-void Game::init(const std::string& config) {
-	std::ifstream file(config);
-	if (!file.is_open()) {
-		throw std::runtime_error("Could not open config file: " + config);
+void Game::init() {
+
+	levelQueue.enqueue("level1.txt");
+	levelQueue.enqueue("Level2.txt");
+	levelQueue.enqueue("Level3.txt");
+
+	if (!levelQueue.isEmpty()) {
+		currentLevelPath = levelQueue.front();
+		levelQueue.dequeue();
+		loadConfig(currentLevelPath);
 	}
-	//file >> playerConfig.SR >> playerConfig.CR >> playerConfig.FR >> playerConfig.FG >> playerConfig.FB >> playerConfig.OR >> playerConfig.OG >> playerConfig.OB >> playerConfig.OT >> playerConfig.V >> playerConfig.S;
-	//file >> enemyConfig.SR >> enemyConfig.CR >> enemyConfig.OR >> enemyConfig.OG >> enemyConfig.OB >> enemyConfig.OT >> enemyConfig.VMin >> enemyConfig.VMax >> enemyConfig.L >> enemyConfig.SI >> enemyConfig.SMin >> enemyConfig.SMax;
-	//file >> bulletConfig.SR >> bulletConfig.CR >> bulletConfig.FR >> bulletConfig.FG >> bulletConfig.FB >> bulletConfig.OR >> bulletConfig.OG >> bulletConfig.OB >> bulletConfig.OT >> bulletConfig.V >> bulletConfig.L >> bulletConfig.S;
-	//Setting Default Values for Debugging
-	playerConfig = { 30.0f, 16.0f, 0, 0, 0, 255, 255, 0, 8, 12, 3 };
-	enemyConfig = { 30.0f, 30.0f, 255, 255, 255, 0, 1, 3, 90, 120, 3, 10 };
-	bulletConfig = { 4.0f, 3.0f, 255, 255, 0, 255, 255, 255, 1, 10, 120, 3.0f };
+	if (font.openFromFile("Fonts/Coolvetica Rg.otf")) {
+		std::cout << "Font loed successfully." << std::endl;
+	}
+	else {
+		std::cerr << "Failed to load font ##########." << std::endl;
+	}
+
+	if (!p1HeartTex.loadFromFile("Player1hearts.png")) {
+		std::cerr << "Failed to load Player1hearts.png" << std::endl;
+	}
+	if (!p2HeartTex.loadFromFile("Player2hearts.png")) {
+		std::cerr << "Failed to load Player2hearts.png" << std::endl;
+	}
+
+	if (jumpBuffer.loadFromFile("jump.wav")) {
+		jumpSound.setVolume(50.f);
+	}
+	else {
+		std::cerr << "Failed to load jump.wav" << std::endl;
+	}
+
+	if (buttonBuffer.loadFromFile("button.wav")) {
+		buttonSound.setVolume(80.f);
+	}
+	else {
+		std::cerr << "Failed to load button.wav" << std::endl;
+	}
+
+	window.create(sf::VideoMode({ WINDOW_WIDTH, WINDOW_HEIGHT }), "2 bhai 2no Tabahi");
+	window.setFramerateLimit(60);
+	spawnPlayers();
+	entityManager.Update();
+	gameView = window.getDefaultView();
+
+
+	PushMusic("menu.ogg");
+
+	musicStack.print();
 }
 
-Game::Game(const std::string& config) {
-	init(config);
+
+// Load Config
+#include <sstream>
+
+void Game::loadConfig(const std::string& path) {
+	std::ifstream file(path);
+	if (!file.is_open()) {
+		std::cerr << "Could not open config: " << path << std::endl;
+		return;
+	}
+
+	hasBackground = false;
+
+	std::string line;
+	while (std::getline(file, line)) {
+		if (line.empty() || line[0] == '#' || line[0] == '\r') {
+			continue;
+		}
+
+		std::istringstream iss(line);
+		std::string type;
+		iss >> type;
 
 		if (type == "Tile") {
 			float x, y, w, h;
@@ -72,53 +112,27 @@ Game::Game(const std::string& config) {
 			float x, y, wp1x, wp1y, wp2x, wp2y, speed, sightRange, sightAngle;
 			iss >> x >> y >> wp1x >> wp1y >> wp2x >> wp2y >> speed >> sightRange >> sightAngle;
 
-	Text = std::make_unique<sf::Text>(font, "Default", 24);
-	Text->setFillColor(sf::Color::White);
+			auto enemy = entityManager.AddEntity("Enemy");
+			enemy->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
+			enemy->boundingBox = std::make_shared<CBoundingBox>(40.0f, 48.0f);
+			enemy->sprite = std::make_shared<CSprite>(40.0f, 48.0f, sf::Color(220, 120, 0));
 
-	spawnPlayer();
+			auto patrol = std::make_shared<CPatrol>();
+			patrol->waypoints.push_back(Vec2(wp1x, wp1y));
+			patrol->waypoints.push_back(Vec2(wp2x, wp2y));
+			patrol->speed = speed;
+			enemy->patrol = patrol;
 
-			auto sight = std::make_shared<CSight>();
-			sight->range = sightRange;
-			sight->halfAngleDeg = sightAngle;
-			enemy->sight = sight;
-		}
-		else if (type == "Button") {
-			float x, y, w, h;
-			std::string linkedTag;
-			int requiresStay = 0, requiresInput = 0;
+	Running = true;
+	Paused = false;
+	LastEnemySpawnTime = 0;
 
-			iss >> x >> y >> w >> h >> linkedTag >> requiresStay >> requiresInput;
+}
 
-			auto button = entityManager.AddEntity("Button");
-			button->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
-			button->boundingBox = std::make_shared<CBoundingBox>(w, h);
-			button->sprite = std::make_shared<CSprite>(w, h, sf::Color(0, 0, 255));
 
-			auto inter = std::make_shared<CInteractable>();
-			inter->linkedTag = linkedTag;
-			inter->requiresStay = (requiresStay != 0);
-			inter->requiresInput = (requiresInput != 0);
-			button->interactable = inter;
-		}
-		else if (type == "Door") {
-			std::string tag;
-			float x, y, w, h, openX, openY;
-			iss >> tag >> x >> y >> w >> h >> openX >> openY;
-
-			auto door = entityManager.AddEntity("Door");
-			door->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
-			door->boundingBox = std::make_shared<CBoundingBox>(w, h);
-			door->sprite = std::make_shared<CSprite>(w, h, sf::Color(80, 60, 40));
-
-			auto d = std::make_shared<CDoor>();
-			d->linkTag = tag;
-			door->door = d;
-		}
-		else if (type == "Platform") {
-			std::string tag;
-			float x, y, w, h, targetX, targetY, speed;
-			std::string linkedTag;
-			int reqTriggers = 1;
+void Game::Run() {
+	window.setFramerateLimit(GameConfig::FRAMERATE_LIMIT);
+	entityManager.Update();
 
 			iss >> tag >> x >> y >> w >> h >> targetX >> targetY >> speed >> linkedTag >> reqTriggers;
 
@@ -131,7 +145,7 @@ Game::Game(const std::string& config) {
 			mp->posA = Vec2(x, y);
 			mp->posB = Vec2(targetX, targetY);
 			mp->speed = speed;
-			mp->requiredTriggers = reqTriggers;
+			mp->requiredTriggers = reqTriggers; 
 			plat->movingPlatform = mp;
 		}
 		else if (type == "Checkpoint") {
@@ -161,32 +175,32 @@ Game::Game(const std::string& config) {
 		else if (type == "Music") {
 			std::string trackName;
 			iss >> trackName;
-			std::cout << "Music Loaded " << trackName << std::endl;
-			PushMusic(trackName);
-		}
+			std::cout << "Music Loaded "<< trackName<<std::endl;
+			PushMusic(trackName);  
+			}
 		else if (type == "Background") {
-			std::string bgName;
-			iss >> bgName;
+				std::string bgName;
+				iss >> bgName;
 
-			if (!bgName.empty() && bgName.back() == '\r') {
-				bgName.pop_back();
-			}
+				if (!bgName.empty() && bgName.back() == '\r') {
+					bgName.pop_back();
+				}
 
-			std::cout << "Attempting to load Background: " << bgName << std::endl;
+				std::cout << "Attempting to load Background: " << bgName << std::endl;
 
-			sf::Texture& bgTex = getTexture(bgName);
+				sf::Texture& bgTex = getTexture(bgName);
 
+				
+				backgroundSprite.setTexture(bgTex, true);
 
-			backgroundSprite.setTexture(bgTex, true);
+				if (bgTex.getSize().x > 0 && bgTex.getSize().y > 0) {
+					float scaleX = static_cast<float>(WINDOW_WIDTH) / bgTex.getSize().x;
+					float scaleY = static_cast<float>(WINDOW_HEIGHT) / bgTex.getSize().y;
+					backgroundSprite.setScale({ scaleX, scaleY });
+				}
 
-			if (bgTex.getSize().x > 0 && bgTex.getSize().y > 0) {
-				float scaleX = static_cast<float>(WINDOW_WIDTH) / bgTex.getSize().x;
-				float scaleY = static_cast<float>(WINDOW_HEIGHT) / bgTex.getSize().y;
-				backgroundSprite.setScale({ scaleX, scaleY });
-			}
-
-			hasBackground = true;
-		}
+				hasBackground = true;
+				}
 		else {
 			std::cerr << "Warning: Unknown entity type in config: " << type << std::endl;
 		}
@@ -241,181 +255,192 @@ void Game::spawnPlayers() {
 
 // Main loop
 
+void Game::Run() {
 	while (Running) {
 		entityManager.Update();
 		sUserInput();
-
-		sTransition();
-		if (State == GameState::Playing) {
-			sGravity();
+		if (!Paused) {
+			sEnemySpawn();
 			sMovement();
+			sPatrol();
+			sSight();
+			sHealth();
+			sInteract();
+			sMovingPlatform();
+			sWinCondition();
 			sCollision();
-			sLifespan();
+			sCamera();
 		}
 		sRender();
 		currentFrame++;
 	}
 }
 
-// ---------------------------------------------------------------------------
-// Systems
-// ---------------------------------------------------------------------------
+void Game::sCamera() {
 
-void Game::sRender() {
-	window.clear();
+	bool p1Alive = player1->transform && !player1->health->isDead;
+	bool p2Alive = player2->transform && !player2->health->isDead;
 
-	for (auto& e : entityManager.GetEntities()) {
-		if (e->transform && e->shape) {
-			SetPosition(e);
-			window.draw(e->shape->getShape());
+	if (!p1Alive && !p2Alive) { return; }
+
+	float cx, cy, viewW, viewH;
+
+	if (p1Alive && p2Alive) {
+		Vec2 p1 = player1->transform->position;
+		Vec2 p2 = player2->transform->position;
+
+		cx = (p1.x + p2.x) / 2.0f;
+		cy = (p1.y + p2.y) / 2.0f;
+
+		float dx = std::abs(p1.x - p2.x) + 120.f;
+		float dy = std::abs(p1.y - p2.y) + 120.f;
+
+		float aspect = static_cast<float>(WINDOW_HEIGHT) / WINDOW_WIDTH;
+
+		float minViewW = 800.f;
+		float minViewH = minViewW * aspect;
+
+		if (dy > dx * aspect) {
+			viewH = std::max(minViewH, dy);
+			viewW = viewH / aspect;
+		}
+		else {
+			viewW = std::max(minViewW, dx);
+			viewH = viewW * aspect;
+		}
+
+		if (viewW > 2200.f) {
+			viewW = 2200.f;
+			viewH = 2200.f * aspect;
 		}
 	}
+	else {
+		Vec2 pos = p1Alive ? player1->transform->position
+			: player2->transform->position;
+		cx = pos.x;
+		cy = pos.y;
+		viewW = static_cast<float>(WINDOW_WIDTH);
+		viewH = static_cast<float>(WINDOW_HEIGHT);
+	}
 
-	Text->setString("Score: " + std::to_string(score));
-	window.draw(*Text);
-	window.display();
+	sf::Vector2f current = gameView.getCenter();
+	sf::Vector2f target = { cx, cy };
+	gameView.setCenter(current + (target - current) * 0.1f);
+
+	sf::Vector2f currentSize = gameView.getSize();
+	sf::Vector2f targetSize = { viewW, viewH };
+	gameView.setSize(currentSize + (targetSize - currentSize) * 0.1f);
+
+	window.setView(gameView);
 }
 
-void Game::sCollision() {
-	// Boundary collision
-	for (auto& e : entityManager.GetEntities()) {
-		if (e->collision && e->shape && e->transform) {
-			float radius = e->shape->getRadius();
+void Game::sUserInput() {
+	while (const std::optional<sf::Event> event = window.pollEvent()) {
 
-			if (e->transform->position.x + radius > window.getSize().x ||
-				e->transform->position.x - radius < 0) {
-				e->transform->velocity.x *= -1;
-			}
+		if (event->is<sf::Event::Closed>()) {
+			Running = false;
+		}
 
-			if (e->transform->position.y + radius > window.getSize().y ||
-				e->transform->position.y - radius < 0) {
-				e->transform->velocity.y *= -1;
+		if (const auto* kp = event->getIf<sf::Event::KeyPressed>()) {
+			if (State == GameState::StartMenu) {
+				if (kp->code == sf::Keyboard::Key::Up ||
+					kp->code == sf::Keyboard::Key::W) {
+					SelectedOption = (SelectedOption + 1) % 2;
+				}
+				if (kp->code == sf::Keyboard::Key::Down ||
+					kp->code == sf::Keyboard::Key::S) {
+					SelectedOption = (SelectedOption + 1) % 2;
+				}
+				if (kp->code == sf::Keyboard::Key::Enter ||
+					kp->code == sf::Keyboard::Key::Space) {
+					if (SelectedOption == 0) {
+						State = GameState::Playing;
+
+	// Player and enemy collision
+	for (auto& Enemies : entityManager.GetEntities("Enemy")) {
+		if (myplayer->collision && Enemies->collision) {
+			float dx = myplayer->transform->position.x - Enemies->transform->position.x;
+			float dy = myplayer->transform->position.y - Enemies->transform->position.y;
+			float distanceSquared = dx * dx + dy * dy;
+
+			int combinedRadius = myplayer->shape->getRadius() + Enemies->shape->getRadius();
+			if (distanceSquared <= combinedRadius * combinedRadius) {
+				myplayer->Destroy();
+				RespawnPlayer();
 			}
 		}
-	}
 
-						PopMusic();
-					}
-					else {
-						Running = false;
-					}
-				}
-				return;
-			}
-
-			if (State == GameState::GameOver) {
-				if (kp->code == sf::Keyboard::Key::R) {
-					PopMusic();
-					entityManager = EntityManager();
-
-					loadConfig(currentLevelPath);
-
-
-					spawnPlayers();
-					entityManager.Update();
-					gameView = window.getDefaultView();
-					State = GameState::Playing;
-				}
-				if (kp->code == sf::Keyboard::Key::Escape) {
 					State = GameState::StartMenu;
 					SelectedOption = 0;
 
-					PushMusic("menu.ogg");
-				}
-				return;
+				int combinedRadius = Bullets->collision->radius + Enemies->collision->radius;
+
+			switch (kp->code) {
+			case sf::Keyboard::Key::W: player1->input->jump = true; break;
+			case sf::Keyboard::Key::A: player1->input->left = true; break;
+			case sf::Keyboard::Key::D: player1->input->right = true; break;
+			case sf::Keyboard::Key::E: player1->input->interact = true; break;
+
+			case sf::Keyboard::Key::Up: player2->input->jump = true; break;
+			case sf::Keyboard::Key::Left:  player2->input->left = true; break;
+			case sf::Keyboard::Key::Right: player2->input->right = true; break;
+			case sf::Keyboard::Key::RShift: player2->input->interact = true; break;
+
+			default: break;
 			}
-			if (State == GameState::GameWon) {
-				if (kp->code == sf::Keyboard::Key::Enter ||
-					kp->code == sf::Keyboard::Key::Space ||
-					kp->code == sf::Keyboard::Key::Escape) {
+		}
 
-		// Bullet and enemy collision
-		for (auto& Bullets : entityManager.GetEntities("Bullet")) {
-			if (Bullets->collision && Enemies->collision) {
-				float dx = Bullets->transform->position.x - Enemies->transform->position.x;
-				float dy = Bullets->transform->position.y - Enemies->transform->position.y;
-				float distanceSquared = dx * dx + dy * dy;
+		if (const auto* kr = event->getIf<sf::Event::KeyReleased>()) {
+			switch (kr->code) {
+			case sf::Keyboard::Key::A: player1->input->left = false; break;
+			case sf::Keyboard::Key::D: player1->input->right = false; break;
+			case sf::Keyboard::Key::W: player1->input->jump = false; break;
+			case sf::Keyboard::Key::E: player1->input->interact = false; break;
 
-					levelQueue.enqueue("Level3.txt");
-				}
-				return;
-			}
+			case sf::Keyboard::Key::Left:  player2->input->left = false; break;
+			case sf::Keyboard::Key::Right: player2->input->right = false; break;
+			case sf::Keyboard::Key::Up: player2->input->jump = false; break;
+			case sf::Keyboard::Key::RShift: player2->input->interact = false; break;
 
-				if (distanceSquared <= combinedRadius * combinedRadius) {
-					Bullets->Destroy();
-					Enemies->Destroy();
-					score += GameConfig::SCORE_PER_KILL;
-
-					if (Enemies->shape->getRadius() > enemyConfig.SR / 2) {
-						spawnSmallEnemy(Enemies);
-					}
-				}
+			default: break;
 			}
 		}
 	}
 }
 
-void Game::sLifespan() {
-	for (auto& e : entityManager.GetEntities()) {
-		if (!e->lifespan) { continue; }
+void Game::sInteract() {
+	for (auto& player : entityManager.GetEntities("Player")) {
+		if (!player->transform || !player->boundingBox) { continue; }
 
-		// Update lifespan
-		if (e->lifespan->remaining > 0) {
-			e->lifespan->remaining--;
+		if (player->input->interact) {
+			for (auto& door : entityManager.GetEntities("Door")) {
+				if (!door->door || !door->door->isOpen || !door->transform || !door->boundingBox) { continue; }
 
-			// Calculate alpha fade effect
-			float ratio = static_cast<float>(e->lifespan->remaining) / static_cast<float>(e->lifespan->total);
+				float dx = std::abs(player->transform->position.x - door->transform->position.x);
+				float dy = std::abs(player->transform->position.y - door->transform->position.y);
 
-			sf::Color fillColor = e->shape->getShape().getFillColor();
-			sf::Color outlineColor = e->shape->getShape().getOutlineColor();
+				if (dx < player->boundingBox->halfSize.x + door->boundingBox->halfSize.x &&
+					dy < player->boundingBox->halfSize.y + door->boundingBox->halfSize.y) {
 
-			fillColor.a = static_cast<std::uint8_t>(GameConfig::MAX_ALPHA * ratio);
-			outlineColor.a = static_cast<std::uint8_t>(GameConfig::MAX_ALPHA * ratio);
+					for (auto& targetDoor : entityManager.GetEntities("Door")) {
+						if (targetDoor != door && targetDoor->door->linkTag == door->door->linkTag) {
 
-							player->transform->position = targetDoor->transform->position;
-							player->input->interact = false;
-							break;
-						}
-					}
-					break;
-				}
-			}
+			e->shape->setFillColor(fillColor);
+			e->shape->getShape().setOutlineColor(outlineColor);
+		}
+
+		// Destroy if time is up
+		if (e->lifespan->remaining <= 0) {
+			e->Destroy();
 		}
 	}
-	for (auto& button : entityManager.GetEntities("Button")) {
-		if (!button->interactable || !button->boundingBox || !button->transform) { continue; }
-
-		auto& inter = button->interactable;
-		bool wasPressed = inter->isPressed;
-
-		bool anyOverlap = false;
-		bool interactPressed = false;
-		bool isHoldingInteract = false;
-
-		for (auto& player : entityManager.GetEntities("Player")) {
-			if (!player->transform || !player->boundingBox) { continue; }
-
-			float dx = std::abs(player->transform->position.x - button->transform->position.x);
-			float dy = std::abs(player->transform->position.y - button->transform->position.y);
-
-			if (dx < player->boundingBox->halfSize.x + button->boundingBox->halfSize.x &&
-				dy < player->boundingBox->halfSize.y + button->boundingBox->halfSize.y) {
-
-				anyOverlap = true;
-
-				if (player == player1 && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::E)) {
-					isHoldingInteract = true;
-				}
-				if (player == player2 && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RShift)) {
-					isHoldingInteract = true;
-				}
-
-				if (player->input->interact) {
-					interactPressed = true;
-					player->input->interact = false;
-				}
-			}
-		}
+}
+void Game::sEnemySpawn() {
+	if (currentFrame - LastEnemySpawnTime == GameConfig::ENEMY_SPAWN_INTERVAL) {
+		spawnEnemy();
+		LastEnemySpawnTime = currentFrame;
+	}
+}
 
 		if (inter->requiresInput && inter->requiresStay) {
 			inter->isPressed = (anyOverlap && isHoldingInteract);
@@ -433,7 +458,7 @@ void Game::sLifespan() {
 				inter->isPressed = true;
 			}
 		}
-
+			
 		if (inter->isPressed != wasPressed) {
 			buttonSound.play();
 
@@ -543,7 +568,7 @@ void Game::sGravity() {
 
 		t->onGround = false;
 		if (wasOnGround && !t->onGround && t->velocity.y >= 0.0f) {
-			t->coyoteFrames = 8;
+			t->coyoteFrames = 8;  
 		}
 
 		t->velocity.y += GRAVITY;
@@ -554,16 +579,29 @@ void Game::sGravity() {
 }
 
 void Game::sMovement() {
-	// Reset player velocity
-	myplayer->transform->velocity = { 0.0f, 0.0f };
+	for (auto& e : entityManager.GetEntities("Player")) {
+		if (!e->transform || !e->input) { continue; }
 
-	// Player movement
-	if (myplayer->input->down && myplayer->transform->position.y + playerConfig.SR < window.getSize().y) {
-		myplayer->transform->velocity.y = playerConfig.V;
-	}
-	else if (myplayer->input->up && myplayer->transform->position.y - playerConfig.SR > 0) {
-		myplayer->transform->velocity.y = -playerConfig.V;
-	}
+		auto& t = e->transform;
+		auto& in = e->input;
+
+		if (in->jump) {
+			t->JumpBufferFrames = 8;
+			in->jump = false;
+
+		}
+		if (t->JumpBufferFrames > 0) { t->JumpBufferFrames--; }
+
+		bool canJump = t->onGround || t->coyoteFrames > 0;
+		if (t->JumpBufferFrames > 0 && canJump) {
+
+			if (t->velocity.y < 0.0f) {
+				t->velocity.y += JUMP_VELOCITY;
+			}
+			else {
+				t->velocity.y = JUMP_VELOCITY;
+			}
+			// ------------------------------
 
 			t->onGround = false;
 			t->coyoteFrames = 0;
@@ -588,472 +626,371 @@ void Game::sMovement() {
 
 			if (std::abs(t->velocity.x) > 1.5f) {
 				Vec2 dustPos = Vec2(t->position.x, t->position.y + e->boundingBox->halfSize.y);
-				float skidDir = (t->velocity.x > 0.0f) ? 1.0f : -1.0f;
+				float skidDir = (t->velocity.x > 0.0f) ? 1.0f : -1.0f; 
 				spawnDustParticles(dustPos, 5, skidDir);
 			}
 
-	// Special weapon logic
-	if (mIsSpecialActive) {
-		int activeDuration = currentFrame - mSpecialStartTime;
-		if (activeDuration < GameConfig::SPECIAL_WEAPON_DURATION) {
-			if (activeDuration % GameConfig::SPECIAL_WEAPON_SPAWN_RATE == 0) {
-				spawnSpecialWeapon(myplayer);
-			}
+		}
+		else if (pushingLeft) {
+			t->velocity.x -= ACCELERATION;
+
+		}
+		else if (pushingRight) {
+			t->velocity.x += ACCELERATION;
+
 		}
 		else {
-			LastPlayerSpecialWeaponTime = currentFrame;
-			mIsSpecialActive = false;
-		}
-	}
+			t->velocity.x *= FRICTION;
 
-	// Update all entity positions
-	for (auto& e : entityManager.GetEntities()) {
-		if (e->transform) {
-			e->transform->position.x += e->transform->velocity.x;
-			e->transform->position.y += e->transform->velocity.y;
-			e->transform->rotation += GameConfig::ENTITY_ROTATION_SPEED;
+			if (std::abs(t->velocity.x) < 0.15f) {
+				t->velocity.x = 0.0f;
+			}
 		}
+
+		t->velocity.x = std::clamp(t->velocity.x, -MAX_MOVE_SPEED, MAX_MOVE_SPEED);
+
+		t->position.x += t->velocity.x;
+		t->position.y += t->velocity.y;
 	}
 }
+void Game::sCollision() {
+	const float groundTop = static_cast<float>(WINDOW_HEIGHT) - GROUND_H;
+	const float wf = static_cast<float>(WINDOW_WIDTH);
 
-void Game::sUserInput() {
-	while (const std::optional<sf::Event> event = window.pollEvent()) {
-		if (event->is<sf::Event::Closed>()) {
-			Running = false;
+	for (auto& e : entityManager.GetEntities("Player")) {
+		if (!e->transform || !e->boundingBox) { continue; }
+
+		const float hw = e->boundingBox->halfSize.x;
+		const float hh = e->boundingBox->halfSize.y;
+
+		std::vector<std::shared_ptr<Entity>> solidEntities;
+
+		for (auto& tile : entityManager.GetEntities("Tile")) {
+			solidEntities.push_back(tile);
 		}
 
-		if (event->is<sf::Event::KeyPressed>()) {
-			const auto& keyPress = event->getIf<sf::Event::KeyPressed>();
-			switch (keyPress->code) {
-			case sf::Keyboard::Key::W:
-				myplayer->input->up = true;
-				break;
-			case sf::Keyboard::Key::S:
-				myplayer->input->down = true;
-				break;
-			case sf::Keyboard::Key::A:
-				myplayer->input->left = true;
-				break;
-			case sf::Keyboard::Key::D:
-				myplayer->input->right = true;
-				break;
-			case sf::Keyboard::Key::Space:
-				if (!mIsSpecialActive && (currentFrame - LastPlayerSpecialWeaponTime >= GameConfig::SPECIAL_WEAPON_COOLDOWN)) {
-					mIsSpecialActive = true;
-					mSpecialStartTime = currentFrame;
-					LastPlayerSpecialWeaponTime = currentFrame;
+		for (auto& ent : entityManager.GetEntities()) {
+			if (ent->movingPlatform) {
+				solidEntities.push_back(ent);
+			}
+		}
+
+	if (myplayer->input->right && myplayer->transform->position.x + playerConfig.SR < window.getSize().x) {
+		myplayer->transform->velocity.x = playerConfig.V;
+	}
+	else if (myplayer->input->left && myplayer->transform->position.x - playerConfig.SR > 0) {
+		myplayer->transform->velocity.x = -playerConfig.V;
+	}
+
+						if (!e->transform->onGround && e->transform->velocity.y > 1.0f) {
+							spawnDustParticles(Vec2(e->transform->position.x,
+								e->transform->position.y + e->boundingBox->halfSize.y), 6);
+						}
+						e->transform->onGround = true;
+					}
+					else {
+						e->transform->position.y += overlapY;
+					}
+					e->transform->velocity.y = 0.0f;
 				}
-				break;
-			case sf::Keyboard::Key::P:
-				SetPaused(!Paused);
-				break;
-			default:
-				break;
 			}
 		}
+		for (auto& Other : entityManager.GetEntities("Player")) {
 
-		if (event->is<sf::Event::KeyReleased>()) {
-			const auto& keyRelease = event->getIf<sf::Event::KeyReleased>();
-			switch (keyRelease->code) {
-			case sf::Keyboard::Key::W:
-				myplayer->input->up = false;
-				break;
-			case sf::Keyboard::Key::S:
-				myplayer->input->down = false;
-				break;
-			case sf::Keyboard::Key::A:
-				myplayer->input->left = false;
-				break;
-			case sf::Keyboard::Key::D:
-				myplayer->input->right = false;
-				break;
-			case sf::Keyboard::Key::Space:
-				myplayer->input->special = false;
-				break;
-			default:
-				break;
+			if (e.get() >= Other.get()) { continue; }
+			if (!Other->transform || !Other->boundingBox) { continue; }
+
+			const float hw = e->boundingBox->halfSize.x;
+			const float hh = e->boundingBox->halfSize.y;
+			const float otherHW = Other->boundingBox->halfSize.x;
+			const float otherHH = Other->boundingBox->halfSize.y;
+
+			float dx = e->transform->position.x - Other->transform->position.x;
+			float dy = e->transform->position.y - Other->transform->position.y;
+
+			if (std::abs(dx) < hw + otherHW && std::abs(dy) < hh + otherHH) {
+				float overlapX = (hw + otherHW) - std::abs(dx);
+				float overlapY = (hh + otherHH) - std::abs(dy);
+
+				if (overlapY < overlapX + 16.0f) {
+
+					if (dy < 0.0f) {
+						e->transform->position.y -= overlapY;
+						e->transform->onGround = true;
+						e->transform->coyoteFrames = 8;
+
+						if (e->transform->velocity.y > 0.0f) {
+							e->transform->velocity.y = (Other->transform->velocity.y < 0.0f) ? Other->transform->velocity.y : 0.0f;
+						}
+
+						e->transform->position.x += Other->transform->velocity.x;
+
+					}
+					else {
+						Other->transform->position.y -= overlapY;
+						Other->transform->onGround = true;
+						Other->transform->coyoteFrames = 8;
+
+						if (Other->transform->velocity.y > 0.0f) {
+							Other->transform->velocity.y = (e->transform->velocity.y < 0.0f) ? e->transform->velocity.y : 0.0f;
+						}
+
+						Other->transform->position.x += e->transform->velocity.x;
+					}
+
+				}
+				else {
+
+					if (dx < 0.0f) {
+						e->transform->position.x -= overlapX * 0.5f;
+						Other->transform->position.x += overlapX * 0.5f;
+					}
+					else {
+						e->transform->position.x += overlapX * 0.5f;
+						Other->transform->position.x -= overlapX * 0.5f;
+					}
+
+					e->transform->velocity.x *= 0.5f;
+					Other->transform->velocity.x *= 0.5f;
+				}
 			}
 		}
-
-		if (event->is<sf::Event::MouseButtonPressed>()) {
-			const auto& mousePress = event->getIf<sf::Event::MouseButtonPressed>();
-			if (mousePress->button == sf::Mouse::Button::Left) {
-				myplayer->input->shoot = true;
-				Vec2 mousePos = { static_cast<float>(mousePress->position.x), static_cast<float>(mousePress->position.y) };
-				spawnBullet(myplayer, mousePos);
-			}
-		}
-
-void Game::RenderHud() {
-	sf::Text p1Text(font), p2Text(font);
-	p1Text.setCharacterSize(24);
-	p2Text.setCharacterSize(24);
-	p1Text.setFillColor(sf::Color::Cyan);
-	p2Text.setFillColor(sf::Color::White);
-
-	p1Text.setString("P1:");
-	p2Text.setString("P2:");
-
-	p1Text.setPosition({ 20.f, 20.f });
-	p2Text.setPosition({ 20.f, 60.f });
-
-	window.draw(p1Text);
-	window.draw(p2Text);
-
-	sf::Sprite p1Heart(p1HeartTex);
-	sf::Sprite p2Heart(p2HeartTex);
-
-	p1Heart.setScale({ 0.05f, 0.05f });
-	p2Heart.setScale({ 0.05f, 0.05f });
-
-	float heartSpacing = 40.0f;
-	float startXOffset = 60.0f;
-
-	for (int i = 0; i < player1->health->lives; i++) {
-		p1Heart.setPosition({ p1Text.getPosition().x + startXOffset + (i * heartSpacing), 20.f });
-		window.draw(p1Heart);
 	}
+}
+void Game::sParticle() {
+	for (auto& e : entityManager.GetEntities("Particle")) {
+		if (!e->particle || !e->transform || !e->sprite) { continue; }
 
-	for (int i = 0; i < player2->health->lives; i++) {
-		p2Heart.setPosition({ p2Text.getPosition().x + startXOffset + (i * heartSpacing), 60.f });
-		window.draw(p2Heart);
+		auto& p = e->particle;
+		auto& t = e->transform;
+
+		p->age += 1.0f;
+
+		if (p->age >= p->lifetime) {
+			e->Destroy();
+			continue;
+		}
+
+		t->velocity.y += 0.08f;
+		t->position.x += t->velocity.x;
+		t->position.y += t->velocity.y;
+
+		sf::Color c = p->color;
+		c.a = static_cast<std::uint8_t>(p->alpha() * 255);
+		e->sprite->getShape().setFillColor(c);
 	}
 }
 
-void Game::sRender() {
-	window.clear(sf::Color(30, 30, 50));
+void Game::sHealth() {
+	for (auto& e : entityManager.GetEntities("Player")) {
+		if (!e->health || !e->transform) { continue; }
 
-	window.setView(window.getDefaultView());
+		if (e->transform->position.y > WINDOW_HEIGHT + 100.0f) {
+			e->health->lives--;
 
-	if (hasBackground) {
-		backgroundSprite.setPosition({ 0.f, 0.f });
-		window.draw(backgroundSprite);
+			if (e->health->lives <= 0) {
+				State = GameState::GameOver;
+				PushMusic("gameover.ogg");
+			}
+			else {
+				StartRespawn(e->transform->position);
+			}
+			return;
+		}
 	}
+}
+
+		if (event->is<sf::Event::MouseButtonReleased>()) {
+			const auto& mouseRelease = event->getIf<sf::Event::MouseButtonReleased>();
+			if (mouseRelease->button == sf::Mouse::Button::Left) {
+				myplayer->input->shoot = false;
+			}
+		}
+	}
+}
 
 
-
-// ---------------------------------------------------------------------------
-// Spawners
-// ---------------------------------------------------------------------------
-
-void Game::RespawnPlayer() {
-	if (lives != 0) {
-		spawnPlayer();
-		lives--;
+	if (State == GameState::StartMenu) {
+		window.setView(window.getDefaultView());
+		RenderStartMenu();
+		window.display();
 		return;
 	}
 
-
-	window.setView(window.getDefaultView());
-
-	window.setView(gameView);
-	for (auto& e : entityManager.GetEntities()) {
-		if (e->transform && e->sprite) {
-			e->sprite->setPosition(e->transform->position);
-			window.draw(e->sprite->getShape());
-		}
+	if (State == GameState::GameOver) {
+		window.setView(window.getDefaultView());
+		RenderGameOver();
+		window.display();
+		return;
 	}
 
-	sParticle();
-
-	if (State == GameState::RespawnFadeOut || State == GameState::RespawnFadeIn) {
-		sf::CircleShape wipeCircle;
-		float r = std::max(0.0f, transitionRadius);
-		wipeCircle.setRadius(r);
-		wipeCircle.setOrigin({ r, r });
-		wipeCircle.setPosition({ transitionCenter.x, transitionCenter.y });
-
-		wipeCircle.setFillColor(sf::Color::Transparent);
-		wipeCircle.setOutlineColor(sf::Color::Black);
-		wipeCircle.setOutlineThickness(4000.0f);
-
-		window.draw(wipeCircle);
+	if (State == GameState::GameWon) {
+		window.setView(window.getDefaultView());
+		RenderGameWon();
+		window.display();
+		return;
 	}
-
-	window.setView(window.getDefaultView());
-	RenderHud();
-	window.display();
+	else {
+		Running = false;
+		return;
+	}
 }
 
-void Game::sMovingPlatform() {
-	for (auto& e : entityManager.GetEntities()) {
-		if (!e->movingPlatform || !e->transform || !e->boundingBox) { continue; }
+void Game::StartRespawn(Vec2 focusPoint) {
+	if (State == GameState::RespawnFadeOut || State == GameState::RespawnFadeIn) { return; }
 
-		Vec2 target = e->movingPlatform->triggered ? e->movingPlatform->posB : e->movingPlatform->posA;
-		Vec2 current = e->transform->position;
+	State = GameState::RespawnFadeOut;
+	transitionCenter = focusPoint;  
+	transitionRadius = 3000.0f;     
 
-		Vec2 direction = target - current;
+void Game::spawnPlayer() {
+	std::shared_ptr<Entity> player = entityManager.AddEntity("Player");
 
-		float distSq = (direction.x * direction.x) + (direction.y * direction.y);
-		float speedSq = e->movingPlatform->speed * e->movingPlatform->speed;
+	player->transform = std::make_shared<CTransform>();
+	player->collision = std::make_shared<CCollision>(playerConfig.SR);
+	player->shape = std::make_shared<CShape>(
+		playerConfig.SR,
+		static_cast<int>(playerConfig.S),
+		sf::Color(playerConfig.FR, playerConfig.FG, playerConfig.FB),
+		sf::Color(playerConfig.OR, playerConfig.OG, playerConfig.OB),
+		playerConfig.OT
+	);
+	player->input = std::make_shared<CInput>();
 
-		Vec2 moveAmount(0.0f, 0.0f);
+	transitionCenter = Vec2((P1_SPAWN.x + P2_SPAWN.x) * 0.5f, (P1_SPAWN.y + P2_SPAWN.y) * 0.5f);
+	State = GameState::RespawnFadeIn;
+}
 
-		if (distSq > speedSq) {
-			Vec2 normDir = direction.Normalize();
-			moveAmount = normDir * e->movingPlatform->speed;
-			e->transform->position += moveAmount;
-		}
-		else {
-			moveAmount = target - current;
-			e->transform->position = target;
-		}
+
+
+void Game::sWinCondition() {
+	for (auto& exit : entityManager.GetEntities("Exit")) {
+		if (!exit->transform || !exit->boundingBox) { continue; }
+
+		int playersAtExit = 0;
 
 		for (auto& player : entityManager.GetEntities("Player")) {
-			if (!player->transform || !player->boundingBox) { continue; }
-			float platTop = current.y - e->boundingBox->halfSize.y;
-			float platLeft = current.x - e->boundingBox->halfSize.x;
-			float platRight = current.x + e->boundingBox->halfSize.x;
+			if (!player->transform || !player->boundingBox || player->health->isDead) { continue; }
 
-			float playerBottom = player->transform->position.y + player->boundingBox->halfSize.y;
-			float playerX = player->transform->position.x;
+			float dx = std::abs(player->transform->position.x - exit->transform->position.x);
+			float dy = std::abs(player->transform->position.y - exit->transform->position.y);
 
-			if (std::abs(playerBottom - platTop) < 3.0f && playerX > platLeft && playerX < platRight) {
-				player->transform->position += moveAmount;
+			if (dx < player->boundingBox->halfSize.x + exit->boundingBox->halfSize.x &&
+				dy < player->boundingBox->halfSize.y + exit->boundingBox->halfSize.y) {
+				playersAtExit++;
 			}
 		}
-	}
-}
 
-void Game::sPatrol() {
-	for (auto& e : entityManager.GetEntities("Enemy")) {
-		if (!e->patrol || !e->transform) { continue; }
-
-		auto& patrol = e->patrol;
-		auto& t = e->transform;
-
-		if (patrol->waypoints.empty()) { continue; }
-
-		Vec2  target = patrol->waypoints[patrol->currentTarget];
-		Vec2  delta = target - t->position;
-		float dist = std::sqrt(delta.x * delta.x + delta.y * delta.y);
-
-		if (dist < 4.0f) {
-			patrol->currentTarget =
-				(patrol->currentTarget + 1) % static_cast<int>(patrol->waypoints.size());
-		}
-		else {
-			Vec2 dir = delta * (1.0f / dist);
-			t->position += dir * patrol->speed;
-			patrol->facingRight = (dir.x > 0.0f);
+		if (playersAtExit >= 2) {
+			StartWipe(exit->transform->position, true);
 		}
 	}
 }
-void Game::sSight() {
-	static constexpr float PI = 3.14159265f;
+void Game::LoadNextLevel() {
+	if (levelQueue.isEmpty()) {
+		State = GameState::GameWon;
 
-	for (auto& enemy : entityManager.GetEntities("Enemy")) {
-		if (!enemy->sight || !enemy->transform) { continue; }
-
-		auto& sight = enemy->sight;
-		Vec2  enemyPos = enemy->transform->position;
-
-		Vec2 facing = { 1.0f, 0.0f };
-		if (enemy->patrol) {
-			facing = enemy->patrol->facingRight
-				? Vec2(1.0f, 0.0f)
-				: Vec2(-1.0f, 0.0f);
-		}
-
-		float cosHalf = std::cos(sight->halfAngleDeg * PI / 180.0f);
-
-		for (auto& player : entityManager.GetEntities("Player")) {
-			if (!player->transform || !player->health) { continue; }
-			if (player->health->isDead) { continue; }
-
-			Vec2  toPlayer = player->transform->position - enemyPos;
-			float dist = std::sqrt(toPlayer.x * toPlayer.x + toPlayer.y * toPlayer.y);
-
-			if (dist < sight->range && dist > 0.0f) {
-				Vec2  dir = toPlayer * (1.0f / dist);
-				float dot = facing.x * dir.x + facing.y * dir.y;
-
-				if (dot > cosHalf) {
-					player->health->lives--;
-					if (player->health->lives <= 0) {
-						State = GameState::GameOver;
-						PushMusic("gameover.ogg");
-					}
-					else {
-						StartRespawn(player->transform->position);
-					}
-					return;
-				}
-			}
-		}
+		PushMusic("menu.ogg");
+		return;
 	}
+
+	currentLevelPath = levelQueue.front();
+	levelQueue.dequeue();
+
+	entityManager = EntityManager();
+
+	loadConfig(currentLevelPath);
+
+	spawnPlayers();
+
+	entityManager.Update();
+
+	transitionCenter = Vec2((P1_SPAWN.x + P2_SPAWN.x) * 0.5f, (P1_SPAWN.y + P2_SPAWN.y) * 0.5f);
+	State = GameState::RespawnFadeIn;
 }
 
+void Game::StartWipe(Vec2 focusPoint, bool advancingLevel) {
+	if (State == GameState::RespawnFadeOut || State == GameState::RespawnFadeIn) { return; }
 
 	State = GameState::RespawnFadeOut;
 	transitionCenter = focusPoint;
 	transitionRadius = 3000.0f;
 
-	isLoadingNextLevel = false;
+	isLoadingNextLevel = advancingLevel;
 }
 
-	player->transform->position = { GameConfig::WINDOW_WIDTH / 2.0f, GameConfig::WINDOW_HEIGHT / 2.0f };
-	myplayer = player;
+	// Random velocity
+	float vx = static_cast<float>(rand() % static_cast<int>(enemyConfig.VMax - enemyConfig.VMin + 1) + static_cast<int>(enemyConfig.VMin));
+	float vy = static_cast<float>(rand() % static_cast<int>(enemyConfig.VMax - enemyConfig.VMin + 1) + static_cast<int>(enemyConfig.VMin));
+	Vec2 Velocity = { vx, vy };
+
+	enemy->transform->position = Position;
+	enemy->transform->velocity = Velocity;
 }
 
-void Game::spawnSpecialWeapon(std::shared_ptr<Entity> entity) {
-	// Implement special weapon spawning logic here
-	int Amount = entity->shape->getPointCount() + 4;// Example: spawn N bullets in a circular patternw
-	for (int i = 0;i < Amount;i++) {
-		//spawnBullet(entity, { entity->transform->position.x + cos(sf::degrees(360.0f / Amount * i).asRadians()) * 100, entity->transform->position.y + sin(sf::degrees(360.0f / Amount * i).asRadians()) * 100 });
-		std::shared_ptr<Entity> bullet = entityManager.AddEntity("Bullet");
-		bullet->transform = std::make_shared<CTransform>();
-		bullet->collision = std::make_shared<CCollision>(bulletConfig.SR);
-		bullet->lifespan = std::make_shared<CLifeSpan>(bulletConfig.L);
-		bullet->shape = std::make_shared<CShape>(
-			10.0f,
-			myplayer->shape->getPointCount(), // Bullets are same shape as player but smaller
-			sf::Color(50, 125 , 188),
-			sf::Color(0, 0, 0),
-			bulletConfig.OT
-		);
-		bullet->transform->position = entity->transform->position;
-		Vec2 velocity = {
-			cos(sf::degrees(360.0f / Amount * i).asRadians()) * 5.0f,
-			sin(sf::degrees(360.0f / Amount * i).asRadians()) * 5.0f
-		};
-		bullet->transform->velocity = velocity;
-	}
-}
+void Game::PushMusic(const std::string& path) {
+	if (!musicStack.isEmpty() && musicStack.top() == path) { return; }
 
-
-void Game::SetPosition(std::shared_ptr<Entity> entity) {
-	entity->shape->setPosition(entity->transform->position);
-	entity->shape->setRotation(entity->transform->rotation);
-}
-
-
-void Game::spawnEnemy() {
-	float size = rand() % static_cast<int>(enemyConfig.SR) + enemyConfig.SR / 2.5f;
-	std::shared_ptr<Entity> enemy = entityManager.AddEntity("Enemy");
-	enemy->transform = std::make_shared<CTransform>();
-	enemy->collision = std::make_shared<CCollision>(size);
-
-	int sides = static_cast<int>(playerConfig.S);
-	if (sides <= 0) sides = 3;
-
-	enemy->shape = std::make_shared<CShape>(
-		size,
-		sides,
-		sf::Color(rand() % enemyConfig.OR, rand() % enemyConfig.OG, rand() % enemyConfig.OB),
-		sf::Color(rand() % enemyConfig.OR, rand() % enemyConfig.OG, rand() % enemyConfig.OB),
-		enemyConfig.OT
-	);
-
-	// Random spawn position
-	Vec2 Position = {
-		static_cast<float>(rand() % window.getSize().x),
-		static_cast<float>(rand() % window.getSize().y)
-	};
-
-	// Keep away from player
-	if (Position.x > myplayer->transform->position.x - GameConfig::ENEMY_SPAWN_BUFFER &&
-		Position.x < myplayer->transform->position.x + GameConfig::ENEMY_SPAWN_BUFFER) {
-		Position.x = myplayer->transform->position.x + GameConfig::ENEMY_SPAWN_OFFSET;
-	}
-
-void Game::sTransition() {
-	float fadeSpeed = 70.0f;
-
-	if (State == GameState::RespawnFadeOut) {
-		transitionRadius -= fadeSpeed;
-		if (transitionRadius <= 0.0f) {
-			transitionRadius = 0.0f;
-
-			if (isLoadingNextLevel) {
-				LoadNextLevel();
-			}
-			else {
-				ApplyReset();
-			}
-			// -----------------------
-		}
-	}
-	else if (State == GameState::RespawnFadeIn) {
-		transitionRadius += fadeSpeed;
-		if (transitionRadius >= 3000.0f) {
-			State = GameState::Playing;
-		}
-	}
-}
-
-
-
-void Game::PopMusic() {
-	if (!musicStack.isEmpty()) {
-		musicStack.pop();
-	}
+	musicStack.push(path);
 
 	bgMusic.stop();
+	if (bgMusic.openFromFile(path)) {
+		bgMusic.setLooping(true);
+		bgMusic.setVolume(30.f);
+		bgMusic.play();
+	}
+	else {
+		std::cerr << "Warning: Could not load music track: " << path << std::endl;
+	}
+}
 
-	if (!musicStack.isEmpty()) {
-		std::string previousTrack = musicStack.top();
-		if (bgMusic.openFromFile(previousTrack)) {
-			bgMusic.setLooping(true);
-			bgMusic.setVolume(30.f);
-			bgMusic.play();
+void Game::spawnSmallEnemy(std::shared_ptr<Entity> entity) {
+	int Amount = entity->shape->getPointCount();
+	float AngleStep = 360.0f / Amount;
+	int newRadius = entity->shape->getRadius() / 2;
+	float speed = bulletConfig.S;
+	
+	for (int i = 0; i < Amount; i++) {
+		std::shared_ptr<Entity> smallEnemy = entityManager.AddEntity("Enemy");
+		smallEnemy->transform = std::make_shared<CTransform>();
+		smallEnemy->collision = std::make_shared<CCollision>(newRadius);
+		smallEnemy->lifespan = std::make_shared<CLifeSpan>(enemyConfig.L);
+		smallEnemy->shape = std::make_shared<CShape>(
+			newRadius,
+			Amount,
+			sf::Color(rand() % enemyConfig.OR, rand() % enemyConfig.OG, rand() % enemyConfig.OB),
+			sf::Color(rand() % enemyConfig.OR, rand() % enemyConfig.OG, rand() % enemyConfig.OB),
+			enemyConfig.OT
+		);
+		smallEnemy->transform->position = entity->transform->position;
+		
+		Vec2 NewVelocity = {
+			speed * cos(sf::degrees(AngleStep * i).asRadians()),
+			speed * sin(sf::degrees(AngleStep * i).asRadians())
+		};
+		smallEnemy->transform->velocity = NewVelocity;
+	}
+}
+
+	std::string path = "Textures/" + name + ".png";
+
+	if (!textureCache[name].loadFromFile(path)) {
+		std::cerr << "!!! ERROR: Could not find " << path << " !!!" << std::endl;
+
+		sf::Image pinkImage;
+		pinkImage.resize({ 2, 2 }, sf::Color::Magenta);
+
+		bool fallbackLoaded = textureCache[name].loadFromImage(pinkImage);
+		if (!fallbackLoaded) {
+			std::cerr << "Failed to generate fallback texture!" << std::endl;
 		}
 	}
+
+	textureCache[name].setSmooth(false);
+	return textureCache[name];
 }
 
-sf::Texture& Game::getTexture(const std::string& name) {
-	auto it = textureCache.find(name);
-	if (it != textureCache.end()) {
-		return it->second;
-	}
-
-
-
-void Game::spawnBullet(std::shared_ptr<Entity> entity, const Vec2& mousepos) {
-	std::shared_ptr<Entity> bullet = entityManager.AddEntity("Bullet");
-	bullet->transform = std::make_shared<CTransform>();
-	bullet->collision = std::make_shared<CCollision>(bulletConfig.SR);
-	bullet->lifespan = std::make_shared<CLifeSpan>(bulletConfig.L);
-	bullet->shape = std::make_shared<CShape>(
-		bulletConfig.SR,
-		myplayer->shape->getPointCount(),
-		sf::Color(bulletConfig.FR, bulletConfig.FG, bulletConfig.FB),
-		sf::Color(bulletConfig.OR, bulletConfig.OG, bulletConfig.OB),
-		bulletConfig.OT
-	);
-
-	Vec2 direction = { mousepos.x - entity->transform->position.x, mousepos.y - entity->transform->position.y };
-	float length = sqrt(direction.x * direction.x + direction.y * direction.y);
-	if (length != 0) {
-		direction.x /= length;
-		direction.y /= length;
-	}
-
-	Vec2 Velocity = { direction.x * bulletConfig.V, direction.y * bulletConfig.V };
-	bullet->transform->position = entity->transform->position;
-	bullet->transform->velocity = Velocity;
-}
-void Game::RenderGameWon() {
-	const float cx = WINDOW_WIDTH * 0.5f;
-	const float cy = WINDOW_HEIGHT * 0.5f;
-
-	sf::Text over(font), sub(font), hint(font);
-
-	over.setCharacterSize(56);
-	over.setFillColor(sf::Color(255, 215, 0));
-	over.setString("VICTORY!");
-	over.setPosition({ cx - over.getLocalBounds().size.x * 0.5f, cy - 120.f });
-
-	sub.setCharacterSize(28);
-	sub.setFillColor(sf::Color::White);
-	sub.setString("DONO BHAI GAYE BILLO DE GHAR");
-	sub.setPosition({ cx - sub.getLocalBounds().size.x * 0.5f, cy });
-
-	hint.setCharacterSize(22);
-	hint.setFillColor(sf::Color(160, 160, 160));
-	hint.setString("Press Enter or Space to return to Main Menu");
-	hint.setPosition({ cx - hint.getLocalBounds().size.x * 0.5f, cy + 70.f });
-
-void Game::SetPaused(bool paused) {
-	Paused = paused;
+	window.draw(over);
+	window.draw(sub);
+	window.draw(hint);
 }

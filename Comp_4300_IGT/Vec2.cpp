@@ -57,5 +57,5 @@ Vec2 Vec2::Normalize() const {
 	if (length != 0) {
 		return Vec2(x / length, y / length);
 	}
-	return Vec2(0, 0); // Return zero vector if length is zero to avoid division by zero
+	return Vec2(0, 0); 
 }
