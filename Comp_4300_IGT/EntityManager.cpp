@@ -7,6 +7,7 @@
 void EntityManager::Update() {
 	for (auto& entity : entitiesToAdd) {
 		entities.push_back(entity);
+		tagMap[entity->GetTag()].push_back(entity);
 	}
 	entitiesToAdd.clear();
 	RemoveDeadEntities();
@@ -17,7 +18,6 @@ std::shared_ptr<Entity>& EntityManager::AddEntity(const std::string& tag) {
 	std::shared_ptr<Entity> e(new Entity(nextID++, tag));
 
 	entitiesToAdd.push_back(e);
-	tagMap[tag].push_back(e);
 
 	return e;
 }
@@ -38,13 +38,6 @@ const std::vector<std::shared_ptr<Entity>>& EntityManager::GetEntities() const {
 	return entities;
 }
 
-const std::vector<std::shared_ptr<Entity>> EntityManager::GetEntities(const std::string& tag) {
-
-	std::vector<std::shared_ptr<Entity>> taggedEntities; 
-	for (auto& entity : entities) {
-		if (entity->GetTag() == tag) {
-			taggedEntities.push_back(entity);
-		}
-	}
-	return taggedEntities; 
+const std::vector<std::shared_ptr<Entity>>& EntityManager::GetEntities(const std::string& tag) {
+	return tagMap[tag];
 }
