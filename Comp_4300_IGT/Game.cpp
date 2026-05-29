@@ -123,16 +123,48 @@ void Game::loadConfig(const std::string& path) {
 			patrol->speed = speed;
 			enemy->patrol = patrol;
 
-	Running = true;
-	Paused = false;
-	LastEnemySpawnTime = 0;
+			auto sight = std::make_shared<CSight>();
+			sight->range = sightRange;
+			sight->halfAngleDeg = sightAngle;
+			enemy->sight = sight;
+		}
+		else if (type == "Button") {
+			float x, y, w, h;
+			std::string linkedTag;
+			int requiresStay = 0, requiresInput = 0;
 
-}
+			iss >> x >> y >> w >> h >> linkedTag >> requiresStay >> requiresInput;
 
+			auto button = entityManager.AddEntity("Button");
+			button->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
+			button->boundingBox = std::make_shared<CBoundingBox>(w, h);
+			button->sprite = std::make_shared<CSprite>(w, h, sf::Color(0, 0, 255));
 
-void Game::Run() {
-	window.setFramerateLimit(GameConfig::FRAMERATE_LIMIT);
-	entityManager.Update();
+			auto inter = std::make_shared<CInteractable>();
+			inter->linkedTag = linkedTag;
+			inter->requiresStay = (requiresStay != 0);
+			inter->requiresInput = (requiresInput != 0);
+			button->interactable = inter;
+		}
+		else if (type == "Door") {
+			std::string tag;
+			float x, y, w, h, openX, openY;
+			iss >> tag >> x >> y >> w >> h >> openX >> openY;
+
+			auto door = entityManager.AddEntity("Door");
+			door->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
+			door->boundingBox = std::make_shared<CBoundingBox>(w, h);
+			door->sprite = std::make_shared<CSprite>(w, h, sf::Color(80, 60, 40));
+
+			auto d = std::make_shared<CDoor>();
+			d->linkTag = tag;
+			door->door = d;
+		}
+		else if (type == "Platform") {
+			std::string tag;
+			float x, y, w, h, targetX, targetY, speed;
+			std::string linkedTag;
+			int reqTriggers = 1;
 
 			iss >> tag >> x >> y >> w >> h >> targetX >> targetY >> speed >> linkedTag >> reqTriggers;
 
@@ -145,7 +177,7 @@ void Game::Run() {
 			mp->posA = Vec2(x, y);
 			mp->posB = Vec2(targetX, targetY);
 			mp->speed = speed;
-			mp->requiredTriggers = reqTriggers; 
+			mp->requiredTriggers = reqTriggers;
 			plat->movingPlatform = mp;
 		}
 		else if (type == "Checkpoint") {
@@ -175,32 +207,32 @@ void Game::Run() {
 		else if (type == "Music") {
 			std::string trackName;
 			iss >> trackName;
-			std::cout << "Music Loaded "<< trackName<<std::endl;
-			PushMusic(trackName);  
-			}
+			std::cout << "Music Loaded " << trackName << std::endl;
+			PushMusic(trackName);
+		}
 		else if (type == "Background") {
-				std::string bgName;
-				iss >> bgName;
+			std::string bgName;
+			iss >> bgName;
 
-				if (!bgName.empty() && bgName.back() == '\r') {
-					bgName.pop_back();
-				}
+			if (!bgName.empty() && bgName.back() == '\r') {
+				bgName.pop_back();
+			}
 
-				std::cout << "Attempting to load Background: " << bgName << std::endl;
+			std::cout << "Attempting to load Background: " << bgName << std::endl;
 
-				sf::Texture& bgTex = getTexture(bgName);
+			sf::Texture& bgTex = getTexture(bgName);
 
-				
-				backgroundSprite.setTexture(bgTex, true);
 
-				if (bgTex.getSize().x > 0 && bgTex.getSize().y > 0) {
-					float scaleX = static_cast<float>(WINDOW_WIDTH) / bgTex.getSize().x;
-					float scaleY = static_cast<float>(WINDOW_HEIGHT) / bgTex.getSize().y;
-					backgroundSprite.setScale({ scaleX, scaleY });
-				}
+			backgroundSprite.setTexture(bgTex, true);
 
-				hasBackground = true;
-				}
+			if (bgTex.getSize().x > 0 && bgTex.getSize().y > 0) {
+				float scaleX = static_cast<float>(WINDOW_WIDTH) / bgTex.getSize().x;
+				float scaleY = static_cast<float>(WINDOW_HEIGHT) / bgTex.getSize().y;
+				backgroundSprite.setScale({ scaleX, scaleY });
+			}
+
+			hasBackground = true;
+		}
 		else {
 			std::cerr << "Warning: Unknown entity type in config: " << type << std::endl;
 		}
@@ -259,8 +291,10 @@ void Game::Run() {
 	while (Running) {
 		entityManager.Update();
 		sUserInput();
-		if (!Paused) {
-			sEnemySpawn();
+
+		sTransition();
+		if (State == GameState::Playing) {
+			sGravity();
 			sMovement();
 			sPatrol();
 			sSight();
@@ -356,24 +390,48 @@ void Game::sUserInput() {
 					if (SelectedOption == 0) {
 						State = GameState::Playing;
 
-	// Player and enemy collision
-	for (auto& Enemies : entityManager.GetEntities("Enemy")) {
-		if (myplayer->collision && Enemies->collision) {
-			float dx = myplayer->transform->position.x - Enemies->transform->position.x;
-			float dy = myplayer->transform->position.y - Enemies->transform->position.y;
-			float distanceSquared = dx * dx + dy * dy;
-
-			int combinedRadius = myplayer->shape->getRadius() + Enemies->shape->getRadius();
-			if (distanceSquared <= combinedRadius * combinedRadius) {
-				myplayer->Destroy();
-				RespawnPlayer();
+						PopMusic();
+					}
+					else {
+						Running = false;
+					}
+				}
+				return;
 			}
-		}
+
+			if (State == GameState::GameOver) {
+				if (kp->code == sf::Keyboard::Key::R) {
+					PopMusic();
+					entityManager = EntityManager();
+
+					loadConfig(currentLevelPath);
+
+
+					spawnPlayers();
+					entityManager.Update();
+					gameView = window.getDefaultView();
+					State = GameState::Playing;
+				}
+				if (kp->code == sf::Keyboard::Key::Escape) {
+					State = GameState::StartMenu;
+					SelectedOption = 0;
+
+					PushMusic("menu.ogg");
+				}
+				return;
+			}
+			if (State == GameState::GameWon) {
+				if (kp->code == sf::Keyboard::Key::Enter ||
+					kp->code == sf::Keyboard::Key::Space ||
+					kp->code == sf::Keyboard::Key::Escape) {
 
 					State = GameState::StartMenu;
 					SelectedOption = 0;
 
-				int combinedRadius = Bullets->collision->radius + Enemies->collision->radius;
+					levelQueue.enqueue("Level3.txt");
+				}
+				return;
+			}
 
 			switch (kp->code) {
 			case sf::Keyboard::Key::W: player1->input->jump = true; break;
@@ -425,22 +483,50 @@ void Game::sInteract() {
 					for (auto& targetDoor : entityManager.GetEntities("Door")) {
 						if (targetDoor != door && targetDoor->door->linkTag == door->door->linkTag) {
 
-			e->shape->setFillColor(fillColor);
-			e->shape->getShape().setOutlineColor(outlineColor);
+							player->transform->position = targetDoor->transform->position;
+							player->input->interact = false;
+							break;
+						}
+					}
+					break;
+				}
+			}
 		}
+	}
+	for (auto& button : entityManager.GetEntities("Button")) {
+		if (!button->interactable || !button->boundingBox || !button->transform) { continue; }
 
-		// Destroy if time is up
-		if (e->lifespan->remaining <= 0) {
-			e->Destroy();
+		auto& inter = button->interactable;
+		bool wasPressed = inter->isPressed;
+
+		bool anyOverlap = false;
+		bool interactPressed = false;
+		bool isHoldingInteract = false;
+
+		for (auto& player : entityManager.GetEntities("Player")) {
+			if (!player->transform || !player->boundingBox) { continue; }
+
+			float dx = std::abs(player->transform->position.x - button->transform->position.x);
+			float dy = std::abs(player->transform->position.y - button->transform->position.y);
+
+			if (dx < player->boundingBox->halfSize.x + button->boundingBox->halfSize.x &&
+				dy < player->boundingBox->halfSize.y + button->boundingBox->halfSize.y) {
+
+				anyOverlap = true;
+
+				if (player == player1 && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::E)) {
+					isHoldingInteract = true;
+				}
+				if (player == player2 && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RShift)) {
+					isHoldingInteract = true;
+				}
+
+				if (player->input->interact) {
+					interactPressed = true;
+					player->input->interact = false;
+				}
+			}
 		}
-	}
-}
-void Game::sEnemySpawn() {
-	if (currentFrame - LastEnemySpawnTime == GameConfig::ENEMY_SPAWN_INTERVAL) {
-		spawnEnemy();
-		LastEnemySpawnTime = currentFrame;
-	}
-}
 
 		if (inter->requiresInput && inter->requiresStay) {
 			inter->isPressed = (anyOverlap && isHoldingInteract);
@@ -458,7 +544,7 @@ void Game::sEnemySpawn() {
 				inter->isPressed = true;
 			}
 		}
-			
+
 		if (inter->isPressed != wasPressed) {
 			buttonSound.play();
 
@@ -568,7 +654,7 @@ void Game::sGravity() {
 
 		t->onGround = false;
 		if (wasOnGround && !t->onGround && t->velocity.y >= 0.0f) {
-			t->coyoteFrames = 8;  
+			t->coyoteFrames = 8;
 		}
 
 		t->velocity.y += GRAVITY;
@@ -626,7 +712,7 @@ void Game::sMovement() {
 
 			if (std::abs(t->velocity.x) > 1.5f) {
 				Vec2 dustPos = Vec2(t->position.x, t->position.y + e->boundingBox->halfSize.y);
-				float skidDir = (t->velocity.x > 0.0f) ? 1.0f : -1.0f; 
+				float skidDir = (t->velocity.x > 0.0f) ? 1.0f : -1.0f;
 				spawnDustParticles(dustPos, 5, skidDir);
 			}
 
@@ -675,12 +761,31 @@ void Game::sCollision() {
 			}
 		}
 
-	if (myplayer->input->right && myplayer->transform->position.x + playerConfig.SR < window.getSize().x) {
-		myplayer->transform->velocity.x = playerConfig.V;
-	}
-	else if (myplayer->input->left && myplayer->transform->position.x - playerConfig.SR > 0) {
-		myplayer->transform->velocity.x = -playerConfig.V;
-	}
+		for (auto& geo : solidEntities) {
+			if (!geo->transform || !geo->boundingBox) { continue; }
+			const float geoHW = geo->boundingBox->halfSize.x;
+			const float geoHH = geo->boundingBox->halfSize.y;
+			const float geoX = geo->transform->position.x;
+			const float geoY = geo->transform->position.y;
+
+			if (std::abs(e->transform->position.x - geoX) < hw + geoHW &&
+				std::abs(e->transform->position.y - geoY) < hh + geoHH) {
+
+				float overlapX = (hw + geoHW) - std::abs(e->transform->position.x - geoX);
+				float overlapY = (hh + geoHH) - std::abs(e->transform->position.y - geoY);
+
+				if (overlapX < overlapY) {
+					if (e->transform->position.x < geoX) {
+						e->transform->position.x -= overlapX;
+					}
+					else {
+						e->transform->position.x += overlapX;
+					}
+					e->transform->velocity.x = 0.0f;
+				}
+				else {
+					if (e->transform->position.y < geoY) {
+						e->transform->position.y -= overlapY;
 
 						if (!e->transform->onGround && e->transform->velocity.y > 1.0f) {
 							spawnDustParticles(Vec2(e->transform->position.x,
@@ -800,14 +905,51 @@ void Game::sHealth() {
 	}
 }
 
-		if (event->is<sf::Event::MouseButtonReleased>()) {
-			const auto& mouseRelease = event->getIf<sf::Event::MouseButtonReleased>();
-			if (mouseRelease->button == sf::Mouse::Button::Left) {
-				myplayer->input->shoot = false;
-			}
-		}
+void Game::RenderHud() {
+	sf::Text p1Text(font), p2Text(font);
+	p1Text.setCharacterSize(24);
+	p2Text.setCharacterSize(24);
+	p1Text.setFillColor(sf::Color::Cyan);
+	p2Text.setFillColor(sf::Color::White);
+
+	p1Text.setString("P1:");
+	p2Text.setString("P2:");
+
+	p1Text.setPosition({ 20.f, 20.f });
+	p2Text.setPosition({ 20.f, 60.f });
+
+	window.draw(p1Text);
+	window.draw(p2Text);
+
+	sf::Sprite p1Heart(p1HeartTex);
+	sf::Sprite p2Heart(p2HeartTex);
+
+	p1Heart.setScale({ 0.05f, 0.05f });
+	p2Heart.setScale({ 0.05f, 0.05f });
+
+	float heartSpacing = 40.0f;
+	float startXOffset = 60.0f;
+
+	for (int i = 0; i < player1->health->lives; i++) {
+		p1Heart.setPosition({ p1Text.getPosition().x + startXOffset + (i * heartSpacing), 20.f });
+		window.draw(p1Heart);
+	}
+
+	for (int i = 0; i < player2->health->lives; i++) {
+		p2Heart.setPosition({ p2Text.getPosition().x + startXOffset + (i * heartSpacing), 60.f });
+		window.draw(p2Heart);
 	}
 }
+
+void Game::sRender() {
+	window.clear(sf::Color(30, 30, 50));
+
+	window.setView(window.getDefaultView());
+
+	if (hasBackground) {
+		backgroundSprite.setPosition({ 0.f, 0.f });
+		window.draw(backgroundSprite);
+	}
 
 
 	if (State == GameState::StartMenu) {
@@ -830,9 +972,145 @@ void Game::sHealth() {
 		window.display();
 		return;
 	}
-	else {
-		Running = false;
-		return;
+
+
+	window.setView(window.getDefaultView());
+
+	window.setView(gameView);
+	for (auto& e : entityManager.GetEntities()) {
+		if (e->transform && e->sprite) {
+			e->sprite->setPosition(e->transform->position);
+			window.draw(e->sprite->getShape());
+		}
+	}
+
+	sParticle();
+
+	if (State == GameState::RespawnFadeOut || State == GameState::RespawnFadeIn) {
+		sf::CircleShape wipeCircle;
+		float r = std::max(0.0f, transitionRadius);
+		wipeCircle.setRadius(r);
+		wipeCircle.setOrigin({ r, r });
+		wipeCircle.setPosition({ transitionCenter.x, transitionCenter.y });
+
+		wipeCircle.setFillColor(sf::Color::Transparent);
+		wipeCircle.setOutlineColor(sf::Color::Black);
+		wipeCircle.setOutlineThickness(4000.0f);
+
+		window.draw(wipeCircle);
+	}
+
+	window.setView(window.getDefaultView());
+	RenderHud();
+	window.display();
+}
+
+void Game::sMovingPlatform() {
+	for (auto& e : entityManager.GetEntities()) {
+		if (!e->movingPlatform || !e->transform || !e->boundingBox) { continue; }
+
+		Vec2 target = e->movingPlatform->triggered ? e->movingPlatform->posB : e->movingPlatform->posA;
+		Vec2 current = e->transform->position;
+
+		Vec2 direction = target - current;
+
+		float distSq = (direction.x * direction.x) + (direction.y * direction.y);
+		float speedSq = e->movingPlatform->speed * e->movingPlatform->speed;
+
+		Vec2 moveAmount(0.0f, 0.0f);
+
+		if (distSq > speedSq) {
+			Vec2 normDir = direction.Normalize();
+			moveAmount = normDir * e->movingPlatform->speed;
+			e->transform->position += moveAmount;
+		}
+		else {
+			moveAmount = target - current;
+			e->transform->position = target;
+		}
+
+		for (auto& player : entityManager.GetEntities("Player")) {
+			if (!player->transform || !player->boundingBox) { continue; }
+			float platTop = current.y - e->boundingBox->halfSize.y;
+			float platLeft = current.x - e->boundingBox->halfSize.x;
+			float platRight = current.x + e->boundingBox->halfSize.x;
+
+			float playerBottom = player->transform->position.y + player->boundingBox->halfSize.y;
+			float playerX = player->transform->position.x;
+
+			if (std::abs(playerBottom - platTop) < 3.0f && playerX > platLeft && playerX < platRight) {
+				player->transform->position += moveAmount;
+			}
+		}
+	}
+}
+
+void Game::sPatrol() {
+	for (auto& e : entityManager.GetEntities("Enemy")) {
+		if (!e->patrol || !e->transform) { continue; }
+
+		auto& patrol = e->patrol;
+		auto& t = e->transform;
+
+		if (patrol->waypoints.empty()) { continue; }
+
+		Vec2  target = patrol->waypoints[patrol->currentTarget];
+		Vec2  delta = target - t->position;
+		float dist = std::sqrt(delta.x * delta.x + delta.y * delta.y);
+
+		if (dist < 4.0f) {
+			patrol->currentTarget =
+				(patrol->currentTarget + 1) % static_cast<int>(patrol->waypoints.size());
+		}
+		else {
+			Vec2 dir = delta * (1.0f / dist);
+			t->position += dir * patrol->speed;
+			patrol->facingRight = (dir.x > 0.0f);
+		}
+	}
+}
+void Game::sSight() {
+	static constexpr float PI = 3.14159265f;
+
+	for (auto& enemy : entityManager.GetEntities("Enemy")) {
+		if (!enemy->sight || !enemy->transform) { continue; }
+
+		auto& sight = enemy->sight;
+		Vec2  enemyPos = enemy->transform->position;
+
+		Vec2 facing = { 1.0f, 0.0f };
+		if (enemy->patrol) {
+			facing = enemy->patrol->facingRight
+				? Vec2(1.0f, 0.0f)
+				: Vec2(-1.0f, 0.0f);
+		}
+
+		float cosHalf = std::cos(sight->halfAngleDeg * PI / 180.0f);
+
+		for (auto& player : entityManager.GetEntities("Player")) {
+			if (!player->transform || !player->health) { continue; }
+			if (player->health->isDead) { continue; }
+
+			Vec2  toPlayer = player->transform->position - enemyPos;
+			float dist = std::sqrt(toPlayer.x * toPlayer.x + toPlayer.y * toPlayer.y);
+
+			if (dist < sight->range && dist > 0.0f) {
+				Vec2  dir = toPlayer * (1.0f / dist);
+				float dot = facing.x * dir.x + facing.y * dir.y;
+
+				if (dot > cosHalf) {
+					player->health->lives--;
+					if (player->health->lives <= 0) {
+						State = GameState::GameOver;
+						PushMusic("gameover.ogg");
+					}
+					else {
+						StartRespawn(player->transform->position);
+					}
+					return;
+				}
+			}
+		}
 	}
 }
 
@@ -840,22 +1118,17 @@ void Game::StartRespawn(Vec2 focusPoint) {
 	if (State == GameState::RespawnFadeOut || State == GameState::RespawnFadeIn) { return; }
 
 	State = GameState::RespawnFadeOut;
-	transitionCenter = focusPoint;  
-	transitionRadius = 3000.0f;     
+	transitionCenter = focusPoint;
+	transitionRadius = 3000.0f;
 
-void Game::spawnPlayer() {
-	std::shared_ptr<Entity> player = entityManager.AddEntity("Player");
+	isLoadingNextLevel = false;
+}
 
-	player->transform = std::make_shared<CTransform>();
-	player->collision = std::make_shared<CCollision>(playerConfig.SR);
-	player->shape = std::make_shared<CShape>(
-		playerConfig.SR,
-		static_cast<int>(playerConfig.S),
-		sf::Color(playerConfig.FR, playerConfig.FG, playerConfig.FB),
-		sf::Color(playerConfig.OR, playerConfig.OG, playerConfig.OB),
-		playerConfig.OT
-	);
-	player->input = std::make_shared<CInput>();
+void Game::ApplyReset() {
+	player1->transform->position = P1_SPAWN;
+	player1->transform->velocity = { 0.0f, 0.0f };
+	player2->transform->position = P2_SPAWN;
+	player2->transform->velocity = { 0.0f, 0.0f };
 
 	transitionCenter = Vec2((P1_SPAWN.x + P2_SPAWN.x) * 0.5f, (P1_SPAWN.y + P2_SPAWN.y) * 0.5f);
 	State = GameState::RespawnFadeIn;
@@ -919,13 +1192,29 @@ void Game::StartWipe(Vec2 focusPoint, bool advancingLevel) {
 	isLoadingNextLevel = advancingLevel;
 }
 
-	// Random velocity
-	float vx = static_cast<float>(rand() % static_cast<int>(enemyConfig.VMax - enemyConfig.VMin + 1) + static_cast<int>(enemyConfig.VMin));
-	float vy = static_cast<float>(rand() % static_cast<int>(enemyConfig.VMax - enemyConfig.VMin + 1) + static_cast<int>(enemyConfig.VMin));
-	Vec2 Velocity = { vx, vy };
+void Game::sTransition() {
+	float fadeSpeed = 70.0f;
 
-	enemy->transform->position = Position;
-	enemy->transform->velocity = Velocity;
+	if (State == GameState::RespawnFadeOut) {
+		transitionRadius -= fadeSpeed;
+		if (transitionRadius <= 0.0f) {
+			transitionRadius = 0.0f;
+
+			if (isLoadingNextLevel) {
+				LoadNextLevel();
+			}
+			else {
+				ApplyReset();
+			}
+			// -----------------------
+		}
+	}
+	else if (State == GameState::RespawnFadeIn) {
+		transitionRadius += fadeSpeed;
+		if (transitionRadius >= 3000.0f) {
+			State = GameState::Playing;
+		}
+	}
 }
 
 void Game::PushMusic(const std::string& path) {
@@ -944,33 +1233,28 @@ void Game::PushMusic(const std::string& path) {
 	}
 }
 
-void Game::spawnSmallEnemy(std::shared_ptr<Entity> entity) {
-	int Amount = entity->shape->getPointCount();
-	float AngleStep = 360.0f / Amount;
-	int newRadius = entity->shape->getRadius() / 2;
-	float speed = bulletConfig.S;
-	
-	for (int i = 0; i < Amount; i++) {
-		std::shared_ptr<Entity> smallEnemy = entityManager.AddEntity("Enemy");
-		smallEnemy->transform = std::make_shared<CTransform>();
-		smallEnemy->collision = std::make_shared<CCollision>(newRadius);
-		smallEnemy->lifespan = std::make_shared<CLifeSpan>(enemyConfig.L);
-		smallEnemy->shape = std::make_shared<CShape>(
-			newRadius,
-			Amount,
-			sf::Color(rand() % enemyConfig.OR, rand() % enemyConfig.OG, rand() % enemyConfig.OB),
-			sf::Color(rand() % enemyConfig.OR, rand() % enemyConfig.OG, rand() % enemyConfig.OB),
-			enemyConfig.OT
-		);
-		smallEnemy->transform->position = entity->transform->position;
-		
-		Vec2 NewVelocity = {
-			speed * cos(sf::degrees(AngleStep * i).asRadians()),
-			speed * sin(sf::degrees(AngleStep * i).asRadians())
-		};
-		smallEnemy->transform->velocity = NewVelocity;
+void Game::PopMusic() {
+	if (!musicStack.isEmpty()) {
+		musicStack.pop();
+	}
+
+	bgMusic.stop();
+
+	if (!musicStack.isEmpty()) {
+		std::string previousTrack = musicStack.top();
+		if (bgMusic.openFromFile(previousTrack)) {
+			bgMusic.setLooping(true);
+			bgMusic.setVolume(30.f);
+			bgMusic.play();
+		}
 	}
 }
+
+sf::Texture& Game::getTexture(const std::string& name) {
+	auto it = textureCache.find(name);
+	if (it != textureCache.end()) {
+		return it->second;
+	}
 
 	std::string path = "Textures/" + name + ".png";
 
@@ -989,6 +1273,26 @@ void Game::spawnSmallEnemy(std::shared_ptr<Entity> entity) {
 	textureCache[name].setSmooth(false);
 	return textureCache[name];
 }
+void Game::RenderGameWon() {
+	const float cx = WINDOW_WIDTH * 0.5f;
+	const float cy = WINDOW_HEIGHT * 0.5f;
+
+	sf::Text over(font), sub(font), hint(font);
+
+	over.setCharacterSize(56);
+	over.setFillColor(sf::Color(255, 215, 0));
+	over.setString("VICTORY!");
+	over.setPosition({ cx - over.getLocalBounds().size.x * 0.5f, cy - 120.f });
+
+	sub.setCharacterSize(28);
+	sub.setFillColor(sf::Color::White);
+	sub.setString("DONO BHAI GAYE BILLO DE GHAR");
+	sub.setPosition({ cx - sub.getLocalBounds().size.x * 0.5f, cy });
+
+	hint.setCharacterSize(22);
+	hint.setFillColor(sf::Color(160, 160, 160));
+	hint.setString("Press Enter or Space to return to Main Menu");
+	hint.setPosition({ cx - hint.getLocalBounds().size.x * 0.5f, cy + 70.f });
 
 	window.draw(over);
 	window.draw(sub);
