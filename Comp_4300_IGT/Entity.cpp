@@ -15,3 +15,13 @@ std::string& Entity::GetTag() const {
 size_t Entity::GetID() const {
 	return id;
 }
+
+Vec2 Entity::GetBoundingBoxCopy() const {
+	return BoundingBoxcopy;
+}
+
+void Entity::SaveBoundingbox() {
+	if (boundingBox) {
+		BoundingBoxcopy = boundingBox->halfSize;
+	}
+}

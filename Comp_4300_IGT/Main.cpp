@@ -1,7 +1,6 @@
 #include "Game.h"
 
-
 int main() {
-	Game game("Config.txt");
+	Game game;
 	game.Run();
 }
