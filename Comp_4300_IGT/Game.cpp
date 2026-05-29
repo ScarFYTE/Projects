@@ -5,6 +5,145 @@
 #include <iostream>
 #include <cstdint>
 
+namespace {
+	constexpr const char* kLevel1Path = "level1.txt";
+	constexpr const char* kLevel2Path = "Level2.txt";
+	constexpr const char* kLevel3Path = "Level3.txt";
+	constexpr const char* kFontPath = "Fonts/Coolvetica Rg.otf";
+	constexpr const char* kPlayer1HeartsPath = "Player1hearts.png";
+	constexpr const char* kPlayer2HeartsPath = "Player2hearts.png";
+	constexpr const char* kJumpSoundPath = "jump.wav";
+	constexpr const char* kButtonSoundPath = "button.wav";
+	constexpr const char* kWindowTitle = "2 bhai 2no Tabahi";
+	constexpr const char* kMenuMusicPath = "menu.ogg";
+	constexpr const char* kGameOverMusicPath = "gameover.ogg";
+	constexpr const char* kTexturesDirectory = "Textures/";
+	constexpr const char* kTextureExtension = ".png";
+	constexpr unsigned int kFallbackTextureSize = 2;
+
+	constexpr unsigned int kFrameLimit = 60;
+	constexpr float kJumpVolume = 50.0f;
+	constexpr float kButtonVolume = 80.0f;
+	constexpr float kMusicVolume = 30.0f;
+
+	constexpr float kDustBiasMultiplier = 1.5f;
+	constexpr int kDustRandRangeX = 200;
+	constexpr int kDustRandOffsetX = 100;
+	constexpr float kDustRandDivisor = 100.0f;
+	constexpr int kDustRandRangeY = 150;
+	constexpr int kDustRandOffsetY = 30;
+	constexpr float kDustSize = 4.0f;
+	constexpr float kDustLifetime = 18.0f;
+	const sf::Color kDustColor(200, 170, 120);
+
+	constexpr float kEnemyWidth = 40.0f;
+	constexpr float kEnemyHeight = 48.0f;
+	const sf::Color kEnemyColor(220, 120, 0);
+	const sf::Color kButtonColor(0, 0, 255);
+ const sf::Color kButtonPressedColor(0, 200, 100);
+	const sf::Color kButtonReleasedColor(200, 100, 0);
+	const sf::Color kDoorColor(80, 60, 40);
+	const sf::Color kDoorOpenColor(20, 20, 20);
+	const sf::Color kPlatformColor(60, 100, 160);
+	constexpr float kCheckpointSize = 32.0f;
+	const sf::Color kCheckpointColor(0, 180, 255);
+	const sf::Color kExitColor(255, 220, 0);
+	const sf::Color kGroundColor(100, 80, 60);
+	const sf::Color kPlayer1Color(50, 100, 200);
+	const sf::Color kPlayer2Color(200, 50, 50);
+	const sf::Color kBackgroundClearColor(30, 30, 50);
+
+	constexpr float kCameraPadding = 120.0f;
+	constexpr float kMinViewWidth = 800.0f;
+	constexpr float kMaxViewWidth = 2200.0f;
+	constexpr float kCameraLerp = 0.1f;
+
+	constexpr int kMenuOptionCount = 2;
+	constexpr unsigned int kMenuTitleSize = 52;
+	constexpr unsigned int kMenuOptionSize = 30;
+	constexpr unsigned int kMenuArrowSize = 30;
+	constexpr float kMenuTitleOffset = 140.0f;
+	constexpr float kMenuOptionOffset = 60.0f;
+	constexpr float kMenuArrowOffset = 120.0f;
+	constexpr const char* kMenuTitleText = "Do bhai dono Tabahi";
+	constexpr const char* kMenuPlayText = "Play";
+	constexpr const char* kMenuQuitText = "Quit";
+	constexpr const char* kMenuArrowText = ">";
+	const sf::Color kMenuInactiveColor(160, 160, 160);
+
+	constexpr unsigned int kGameOverTitleSize = 56;
+	constexpr unsigned int kGameOverSubtitleSize = 28;
+	constexpr unsigned int kGameOverHintSize = 22;
+	constexpr float kGameOverTitleOffset = 120.0f;
+	constexpr float kGameOverHintOffset = 70.0f;
+	constexpr const char* kGameOverTitleText = "Game Over";
+	constexpr const char* kGameOverSubtitleText = "Both players ran out of lives";
+	constexpr const char* kGameOverHintText = "R  — Restart      Escape — Main Menu";
+	const sf::Color kGameOverTitleColor(220, 60, 60);
+	const sf::Color kHudHintColor(160, 160, 160);
+
+	constexpr unsigned int kGameWonTitleSize = 56;
+	constexpr unsigned int kGameWonSubtitleSize = 28;
+	constexpr unsigned int kGameWonHintSize = 22;
+	constexpr float kGameWonTitleOffset = 120.0f;
+	constexpr float kGameWonHintOffset = 70.0f;
+	constexpr const char* kGameWonTitleText = "VICTORY!";
+	constexpr const char* kGameWonSubtitleText = "DONO BHAI GAYE BILLO DE GHAR";
+	constexpr const char* kGameWonHintText = "Press Enter or Space to return to Main Menu";
+	const sf::Color kGameWonTitleColor(255, 215, 0);
+
+	constexpr int kJumpBufferFrames = 8;
+	constexpr int kCoyoteFrames = 8;
+	constexpr float kTurnThreshold = 0.5f;
+	constexpr float kSkidSpeedThreshold = 1.5f;
+	constexpr int kSkidParticleCount = 5;
+	constexpr float kStopVelocityThreshold = 0.15f;
+	constexpr int kJumpDustCount = 8;
+	constexpr int kLandingDustCount = 6;
+	constexpr float kLandingVelocityThreshold = 1.0f;
+
+	constexpr float kPlayerOverlapBias = 16.0f;
+	constexpr float kPlayerPushFactor = 0.5f;
+
+	constexpr float kParticleAgeStep = 1.0f;
+	constexpr float kParticleGravity = 0.08f;
+	constexpr std::uint8_t kParticleAlphaScale = 255;
+
+	constexpr float kFallDeathOffset = 100.0f;
+	constexpr int kRequiredPlayersAtExit = 2;
+
+	constexpr unsigned int kHudTextSize = 24;
+	constexpr float kHudTextOffsetX = 20.0f;
+	constexpr float kHudP1OffsetY = 20.0f;
+	constexpr float kHudP2OffsetY = 60.0f;
+	constexpr float kHeartScale = 0.05f;
+	constexpr float kHeartSpacing = 40.0f;
+	constexpr float kHeartStartOffsetX = 60.0f;
+
+	constexpr float kWipeOutlineThickness = 4000.0f;
+	constexpr float kPlatformSnapThreshold = 3.0f;
+	constexpr float kPatrolTargetThreshold = 4.0f;
+
+	constexpr float kTransitionRadiusStart = 3000.0f;
+	constexpr float kTransitionFadeSpeed = 70.0f;
+
+	constexpr float kPi = 3.14159265f;
+
+	inline void AdvanceMenuOption(int& option) {
+		option = (option + 1) % kMenuOptionCount;
+	}
+
+    inline bool PlayBackgroundTrack(sf::Music& music, const std::string& path) {
+		if (!music.openFromFile(path)) {
+			return false;
+		}
+		music.setLooping(true);
+		music.setVolume(kMusicVolume);
+		music.play();
+		return true;
+	}
+}
+
 Game::Game() {
 	init();
 }
@@ -12,50 +151,51 @@ Game::Game() {
 void Game::init() {
 
 	levelQueue.enqueue("level1.txt");
-	levelQueue.enqueue("Level2.txt");
-	levelQueue.enqueue("Level3.txt");
+   levelQueue.enqueue(kLevel1Path);
+	levelQueue.enqueue(kLevel2Path);
+	levelQueue.enqueue(kLevel3Path);
 
 	if (!levelQueue.isEmpty()) {
 		currentLevelPath = levelQueue.front();
 		levelQueue.dequeue();
 		loadConfig(currentLevelPath);
 	}
-	if (font.openFromFile("Fonts/Coolvetica Rg.otf")) {
+ if (font.openFromFile(kFontPath)) {
 		std::cout << "Font loed successfully." << std::endl;
 	}
 	else {
 		std::cerr << "Failed to load font ##########." << std::endl;
 	}
 
-	if (!p1HeartTex.loadFromFile("Player1hearts.png")) {
+    if (!p1HeartTex.loadFromFile(kPlayer1HeartsPath)) {
 		std::cerr << "Failed to load Player1hearts.png" << std::endl;
 	}
-	if (!p2HeartTex.loadFromFile("Player2hearts.png")) {
+    if (!p2HeartTex.loadFromFile(kPlayer2HeartsPath)) {
 		std::cerr << "Failed to load Player2hearts.png" << std::endl;
 	}
 
-	if (jumpBuffer.loadFromFile("jump.wav")) {
-		jumpSound.setVolume(50.f);
+  if (jumpBuffer.loadFromFile(kJumpSoundPath)) {
+		jumpSound.setVolume(kJumpVolume);
 	}
 	else {
 		std::cerr << "Failed to load jump.wav" << std::endl;
 	}
 
-	if (buttonBuffer.loadFromFile("button.wav")) {
-		buttonSound.setVolume(80.f);
+  if (buttonBuffer.loadFromFile(kButtonSoundPath)) {
+		buttonSound.setVolume(kButtonVolume);
 	}
 	else {
 		std::cerr << "Failed to load button.wav" << std::endl;
 	}
 
-	window.create(sf::VideoMode({ WINDOW_WIDTH, WINDOW_HEIGHT }), "2 bhai 2no Tabahi");
-	window.setFramerateLimit(60);
+ window.create(sf::VideoMode({ WINDOW_WIDTH, WINDOW_HEIGHT }), kWindowTitle);
+	window.setFramerateLimit(kFrameLimit);
 	spawnPlayers();
 	entityManager.Update();
 	gameView = window.getDefaultView();
 
 
-	PushMusic("menu.ogg");
+  PushMusic(kMenuMusicPath);
 
 	musicStack.print();
 }
@@ -64,6 +204,7 @@ void Game::init() {
 // Load Config
 #include <sstream>
 
+// Parses a level configuration file and spawns entities for the current scene.
 void Game::loadConfig(const std::string& path) {
 	std::ifstream file(path);
 	if (!file.is_open()) {
@@ -114,8 +255,8 @@ void Game::loadConfig(const std::string& path) {
 
 			auto enemy = entityManager.AddEntity("Enemy");
 			enemy->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
-			enemy->boundingBox = std::make_shared<CBoundingBox>(40.0f, 48.0f);
-			enemy->sprite = std::make_shared<CSprite>(40.0f, 48.0f, sf::Color(220, 120, 0));
+          enemy->boundingBox = std::make_shared<CBoundingBox>(kEnemyWidth, kEnemyHeight);
+			enemy->sprite = std::make_shared<CSprite>(kEnemyWidth, kEnemyHeight, kEnemyColor);
 
 			auto patrol = std::make_shared<CPatrol>();
 			patrol->waypoints.push_back(Vec2(wp1x, wp1y));
@@ -138,7 +279,7 @@ void Game::loadConfig(const std::string& path) {
 			auto button = entityManager.AddEntity("Button");
 			button->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
 			button->boundingBox = std::make_shared<CBoundingBox>(w, h);
-			button->sprite = std::make_shared<CSprite>(w, h, sf::Color(0, 0, 255));
+         button->sprite = std::make_shared<CSprite>(w, h, kButtonColor);
 
 			auto inter = std::make_shared<CInteractable>();
 			inter->linkedTag = linkedTag;
@@ -154,7 +295,7 @@ void Game::loadConfig(const std::string& path) {
 			auto door = entityManager.AddEntity("Door");
 			door->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
 			door->boundingBox = std::make_shared<CBoundingBox>(w, h);
-			door->sprite = std::make_shared<CSprite>(w, h, sf::Color(80, 60, 40));
+          door->sprite = std::make_shared<CSprite>(w, h, kDoorColor);
 
 			auto d = std::make_shared<CDoor>();
 			d->linkTag = tag;
@@ -171,7 +312,7 @@ void Game::loadConfig(const std::string& path) {
 			auto plat = entityManager.AddEntity(tag);
 			plat->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
 			plat->boundingBox = std::make_shared<CBoundingBox>(w, h);
-			plat->sprite = std::make_shared<CSprite>(w, h, sf::Color(60, 100, 160));
+            plat->sprite = std::make_shared<CSprite>(w, h, kPlatformColor);
 
 			auto mp = std::make_shared<CMovingPlatform>();
 			mp->posA = Vec2(x, y);
@@ -186,8 +327,8 @@ void Game::loadConfig(const std::string& path) {
 
 			auto cp = entityManager.AddEntity("Checkpoint");
 			cp->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
-			cp->boundingBox = std::make_shared<CBoundingBox>(32.0f, 32.0f);
-			cp->sprite = std::make_shared<CSprite>(32.0f, 32.0f, sf::Color(0, 180, 255));
+         cp->boundingBox = std::make_shared<CBoundingBox>(kCheckpointSize, kCheckpointSize);
+			cp->sprite = std::make_shared<CSprite>(kCheckpointSize, kCheckpointSize, kCheckpointColor);
 
 			auto c = std::make_shared<CCheckpoint>();
 			c->p1Spawn = Vec2(p1sx, p1sy);
@@ -201,7 +342,7 @@ void Game::loadConfig(const std::string& path) {
 			auto exit = entityManager.AddEntity("Exit");
 			exit->transform = std::make_shared<CTransform>(Vec2(x, y), Vec2(0, 0), 0.0f);
 			exit->boundingBox = std::make_shared<CBoundingBox>(w, h);
-			exit->sprite = std::make_shared<CSprite>(w, h, sf::Color(255, 220, 0));
+         exit->sprite = std::make_shared<CSprite>(w, h, kExitColor);
 			exit->exit_ = std::make_shared<CExit>();
 		}
 		else if (type == "Music") {
@@ -244,13 +385,13 @@ void Game::spawnDustParticles(Vec2 position, int count, float directionX) {
 	for (int i = 0; i < count; i++) {
 		auto p = entityManager.AddEntity("Particle");
 
-		float biasX = (directionX != 0.0f) ? directionX * 1.5f : 0.0f;
-		float vx = biasX + ((rand() % 200) - 100) / 100.0f;
-		float vy = -((rand() % 150) + 30) / 100.0f;
+      float biasX = (directionX != 0.0f) ? directionX * kDustBiasMultiplier : 0.0f;
+		float vx = biasX + ((rand() % kDustRandRangeX) - kDustRandOffsetX) / kDustRandDivisor;
+		float vy = -((rand() % kDustRandRangeY) + kDustRandOffsetY) / kDustRandDivisor;
 
 		p->transform = std::make_shared<CTransform>(position, Vec2(vx, vy), 0.0f);
-		p->sprite = std::make_shared<CSprite>(4.0f, 4.0f, sf::Color(200, 170, 120));
-		p->particle = std::make_shared<CParticle>(18.0f, sf::Color(200, 170, 120));
+        p->sprite = std::make_shared<CSprite>(kDustSize, kDustSize, kDustColor);
+		p->particle = std::make_shared<CParticle>(kDustLifetime, kDustColor);
 	}
 }
 
@@ -263,24 +404,21 @@ void Game::spawnGround() {
 
 	ground->transform = std::make_shared<CTransform>(Vec2(cx, cy), Vec2(0.0f, 0.0f), 0.0f);
 	ground->boundingBox = std::make_shared<CBoundingBox>(w, GROUND_H);
-	ground->sprite = std::make_shared<CSprite>(w, GROUND_H, sf::Color(100, 80, 60));
+    ground->sprite = std::make_shared<CSprite>(w, GROUND_H, kGroundColor);
 }
 
 void Game::spawnPlayers() {
-	const float groundTop = static_cast<float>(WINDOW_HEIGHT) - GROUND_H;
-	const float spawnY = groundTop - PLAYER_H * 0.5f;
-
 	player1 = entityManager.AddEntity("Player");
 	player1->transform = std::make_shared<CTransform>(P1_SPAWN, Vec2(0.0f, 0.0f), 0.0f);
 	player1->boundingBox = std::make_shared<CBoundingBox>(PLAYER_W, PLAYER_H);
-	player1->sprite = std::make_shared<CSprite>(PLAYER_W, PLAYER_H, sf::Color(50, 100, 200));
+   player1->sprite = std::make_shared<CSprite>(PLAYER_W, PLAYER_H, kPlayer1Color);
 	player1->input = std::make_shared<CInput>();
 	player1->health = std::make_shared<CHealth>();
 
 	player2 = entityManager.AddEntity("Player");
 	player2->transform = std::make_shared<CTransform>(P2_SPAWN, Vec2(0.0f, 0.0f), 0.0f);
 	player2->boundingBox = std::make_shared<CBoundingBox>(PLAYER_W, PLAYER_H);
-	player2->sprite = std::make_shared<CSprite>(PLAYER_W, PLAYER_H, sf::Color(200, 50, 50));
+    player2->sprite = std::make_shared<CSprite>(PLAYER_W, PLAYER_H, kPlayer2Color);
 	player2->input = std::make_shared<CInput>();
 	player2->health = std::make_shared<CHealth>();
 }
@@ -326,12 +464,12 @@ void Game::sCamera() {
 		cx = (p1.x + p2.x) / 2.0f;
 		cy = (p1.y + p2.y) / 2.0f;
 
-		float dx = std::abs(p1.x - p2.x) + 120.f;
-		float dy = std::abs(p1.y - p2.y) + 120.f;
+       float dx = std::abs(p1.x - p2.x) + kCameraPadding;
+		float dy = std::abs(p1.y - p2.y) + kCameraPadding;
 
 		float aspect = static_cast<float>(WINDOW_HEIGHT) / WINDOW_WIDTH;
 
-		float minViewW = 800.f;
+     float minViewW = kMinViewWidth;
 		float minViewH = minViewW * aspect;
 
 		if (dy > dx * aspect) {
@@ -343,9 +481,9 @@ void Game::sCamera() {
 			viewH = viewW * aspect;
 		}
 
-		if (viewW > 2200.f) {
-			viewW = 2200.f;
-			viewH = 2200.f * aspect;
+       if (viewW > kMaxViewWidth) {
+			viewW = kMaxViewWidth;
+            viewH = kMaxViewWidth * aspect;
 		}
 	}
 	else {
@@ -359,11 +497,11 @@ void Game::sCamera() {
 
 	sf::Vector2f current = gameView.getCenter();
 	sf::Vector2f target = { cx, cy };
-	gameView.setCenter(current + (target - current) * 0.1f);
+    gameView.setCenter(current + (target - current) * kCameraLerp);
 
 	sf::Vector2f currentSize = gameView.getSize();
 	sf::Vector2f targetSize = { viewW, viewH };
-	gameView.setSize(currentSize + (targetSize - currentSize) * 0.1f);
+  gameView.setSize(currentSize + (targetSize - currentSize) * kCameraLerp);
 
 	window.setView(gameView);
 }
@@ -379,11 +517,11 @@ void Game::sUserInput() {
 			if (State == GameState::StartMenu) {
 				if (kp->code == sf::Keyboard::Key::Up ||
 					kp->code == sf::Keyboard::Key::W) {
-					SelectedOption = (SelectedOption + 1) % 2;
+                  AdvanceMenuOption(SelectedOption);
 				}
 				if (kp->code == sf::Keyboard::Key::Down ||
 					kp->code == sf::Keyboard::Key::S) {
-					SelectedOption = (SelectedOption + 1) % 2;
+                  AdvanceMenuOption(SelectedOption);
 				}
 				if (kp->code == sf::Keyboard::Key::Enter ||
 					kp->code == sf::Keyboard::Key::Space) {
@@ -416,7 +554,7 @@ void Game::sUserInput() {
 					State = GameState::StartMenu;
 					SelectedOption = 0;
 
-					PushMusic("menu.ogg");
+                  PushMusic(kMenuMusicPath);
 				}
 				return;
 			}
@@ -428,7 +566,7 @@ void Game::sUserInput() {
 					State = GameState::StartMenu;
 					SelectedOption = 0;
 
-					levelQueue.enqueue("Level3.txt");
+                   levelQueue.enqueue(kLevel3Path);
 				}
 				return;
 			}
@@ -566,17 +704,17 @@ void Game::sInteract() {
 				if (ent->door && ent->door->linkTag == inter->linkedTag) {
 					ent->door->isOpen = inter->isPressed;
 
-					ent->sprite->getShape().setFillColor(
-						ent->door->isOpen ? sf::Color(20, 20, 20) : sf::Color(80, 60, 40)
+                   ent->sprite->getShape().setFillColor(
+						ent->door->isOpen ? kDoorOpenColor : kDoorColor
 					);
 				}
 			}
 		}
 
 		if (button->sprite) {
-			button->sprite->getShape().setFillColor(
-				inter->isPressed ? sf::Color(0, 200, 100) : sf::Color(200, 100, 0)
-			);
+        button->sprite->getShape().setFillColor(
+			inter->isPressed ? kButtonPressedColor : kButtonReleasedColor
+		);
 		}
 	}
 }
@@ -588,27 +726,27 @@ void Game::RenderStartMenu() {
 
 	sf::Text title(font), opt0(font), opt1(font);
 
-	title.setCharacterSize(52);
+ title.setCharacterSize(kMenuTitleSize);
 	title.setFillColor(sf::Color::White);
-	title.setString("Do bhai dono Tabahi");
-	title.setPosition({ cx - title.getLocalBounds().size.x * 0.5f, cy - 140.f });
+ title.setString(kMenuTitleText);
+	title.setPosition({ cx - title.getLocalBounds().size.x * 0.5f, cy - kMenuTitleOffset });
 
-	opt0.setCharacterSize(30);
-	opt0.setString("Play");
-	opt0.setFillColor(SelectedOption == 0 ? sf::Color::Yellow : sf::Color(160, 160, 160));
+  opt0.setCharacterSize(kMenuOptionSize);
+	opt0.setString(kMenuPlayText);
+	opt0.setFillColor(SelectedOption == 0 ? sf::Color::Yellow : kMenuInactiveColor);
 	opt0.setPosition({ cx - opt0.getLocalBounds().size.x * 0.5f, cy });
 
-	opt1.setCharacterSize(30);
-	opt1.setString("Quit");
-	opt1.setFillColor(SelectedOption == 1 ? sf::Color::Yellow : sf::Color(160, 160, 160));
-	opt1.setPosition({ cx - opt1.getLocalBounds().size.x * 0.5f, cy + 60.f });
+  opt1.setCharacterSize(kMenuOptionSize);
+	opt1.setString(kMenuQuitText);
+	opt1.setFillColor(SelectedOption == 1 ? sf::Color::Yellow : kMenuInactiveColor);
+	opt1.setPosition({ cx - opt1.getLocalBounds().size.x * 0.5f, cy + kMenuOptionOffset });
 
 	sf::Text arrow(font);
-	arrow.setCharacterSize(30);
+ arrow.setCharacterSize(kMenuArrowSize);
 	arrow.setFillColor(sf::Color::Yellow);
-	arrow.setString(">");
-	float arrowY = (SelectedOption == 0) ? cy : cy + 60.f;
-	arrow.setPosition({ cx - 120.f, arrowY });
+   arrow.setString(kMenuArrowText);
+	float arrowY = (SelectedOption == 0) ? cy : cy + kMenuOptionOffset;
+	arrow.setPosition({ cx - kMenuArrowOffset, arrowY });
 
 	window.draw(title);
 	window.draw(opt0);
@@ -622,20 +760,20 @@ void Game::RenderGameOver() {
 
 	sf::Text over(font), sub(font), hint(font);
 
-	over.setCharacterSize(56);
-	over.setFillColor(sf::Color(220, 60, 60));
-	over.setString("Game Over");
-	over.setPosition({ cx - over.getLocalBounds().size.x * 0.5f, cy - 120.f });
+  over.setCharacterSize(kGameOverTitleSize);
+	over.setFillColor(kGameOverTitleColor);
+	over.setString(kGameOverTitleText);
+	over.setPosition({ cx - over.getLocalBounds().size.x * 0.5f, cy - kGameOverTitleOffset });
 
-	sub.setCharacterSize(28);
+   sub.setCharacterSize(kGameOverSubtitleSize);
 	sub.setFillColor(sf::Color::White);
-	sub.setString("Both players ran out of lives");
+ sub.setString(kGameOverSubtitleText);
 	sub.setPosition({ cx - sub.getLocalBounds().size.x * 0.5f, cy });
 
-	hint.setCharacterSize(22);
-	hint.setFillColor(sf::Color(160, 160, 160));
-	hint.setString("R  — Restart      Escape — Main Menu");
-	hint.setPosition({ cx - hint.getLocalBounds().size.x * 0.5f, cy + 70.f });
+  hint.setCharacterSize(kGameOverHintSize);
+	hint.setFillColor(kHudHintColor);
+	hint.setString(kGameOverHintText);
+	hint.setPosition({ cx - hint.getLocalBounds().size.x * 0.5f, cy + kGameOverHintOffset });
 
 	window.draw(over);
 	window.draw(sub);
@@ -653,8 +791,8 @@ void Game::sGravity() {
 		bool wasOnGround = t->onGround;
 
 		t->onGround = false;
-		if (wasOnGround && !t->onGround && t->velocity.y >= 0.0f) {
-			t->coyoteFrames = 8;
+     if (wasOnGround && !t->onGround && t->velocity.y >= 0.0f) {
+			t->coyoteFrames = kCoyoteFrames;
 		}
 
 		t->velocity.y += GRAVITY;
@@ -671,8 +809,8 @@ void Game::sMovement() {
 		auto& t = e->transform;
 		auto& in = e->input;
 
-		if (in->jump) {
-			t->JumpBufferFrames = 8;
+     if (in->jump) {
+			t->JumpBufferFrames = kJumpBufferFrames;
 			in->jump = false;
 
 		}
@@ -693,8 +831,8 @@ void Game::sMovement() {
 			t->coyoteFrames = 0;
 			t->JumpBufferFrames = 0;
 
-			spawnDustParticles(
-				Vec2(t->position.x, t->position.y + e->boundingBox->halfSize.y), 8
+         spawnDustParticles(
+				Vec2(t->position.x, t->position.y + e->boundingBox->halfSize.y), kJumpDustCount
 			);
 
 			jumpSound.play();
@@ -703,17 +841,17 @@ void Game::sMovement() {
 		bool pushingLeft = in->left && !in->right;
 		bool pushingRight = in->right && !in->left;
 
-		bool turningLeft = pushingLeft && t->velocity.x > 0.5f;
-		bool turningRight = pushingRight && t->velocity.x < -0.5f;
+     bool turningLeft = pushingLeft && t->velocity.x > kTurnThreshold;
+		bool turningRight = pushingRight && t->velocity.x < -kTurnThreshold;
 		bool turning = turningLeft || turningRight;
 
 		if (turning) {
 			t->velocity.x *= TURN_FRICTION;
 
-			if (std::abs(t->velocity.x) > 1.5f) {
+           if (std::abs(t->velocity.x) > kSkidSpeedThreshold) {
 				Vec2 dustPos = Vec2(t->position.x, t->position.y + e->boundingBox->halfSize.y);
 				float skidDir = (t->velocity.x > 0.0f) ? 1.0f : -1.0f;
-				spawnDustParticles(dustPos, 5, skidDir);
+                spawnDustParticles(dustPos, kSkidParticleCount, skidDir);
 			}
 
 		}
@@ -728,7 +866,7 @@ void Game::sMovement() {
 		else {
 			t->velocity.x *= FRICTION;
 
-			if (std::abs(t->velocity.x) < 0.15f) {
+          if (std::abs(t->velocity.x) < kStopVelocityThreshold) {
 				t->velocity.x = 0.0f;
 			}
 		}
@@ -739,9 +877,8 @@ void Game::sMovement() {
 		t->position.y += t->velocity.y;
 	}
 }
+// Handles collisions between players, tiles, and moving platforms.
 void Game::sCollision() {
-	const float groundTop = static_cast<float>(WINDOW_HEIGHT) - GROUND_H;
-	const float wf = static_cast<float>(WINDOW_WIDTH);
 
 	for (auto& e : entityManager.GetEntities("Player")) {
 		if (!e->transform || !e->boundingBox) { continue; }
@@ -787,9 +924,9 @@ void Game::sCollision() {
 					if (e->transform->position.y < geoY) {
 						e->transform->position.y -= overlapY;
 
-						if (!e->transform->onGround && e->transform->velocity.y > 1.0f) {
+                   if (!e->transform->onGround && e->transform->velocity.y > kLandingVelocityThreshold) {
 							spawnDustParticles(Vec2(e->transform->position.x,
-								e->transform->position.y + e->boundingBox->halfSize.y), 6);
+                         e->transform->position.y + e->boundingBox->halfSize.y), kLandingDustCount);
 						}
 						e->transform->onGround = true;
 					}
@@ -817,12 +954,12 @@ void Game::sCollision() {
 				float overlapX = (hw + otherHW) - std::abs(dx);
 				float overlapY = (hh + otherHH) - std::abs(dy);
 
-				if (overlapY < overlapX + 16.0f) {
+              if (overlapY < overlapX + kPlayerOverlapBias) {
 
 					if (dy < 0.0f) {
 						e->transform->position.y -= overlapY;
 						e->transform->onGround = true;
-						e->transform->coyoteFrames = 8;
+                     e->transform->coyoteFrames = kCoyoteFrames;
 
 						if (e->transform->velocity.y > 0.0f) {
 							e->transform->velocity.y = (Other->transform->velocity.y < 0.0f) ? Other->transform->velocity.y : 0.0f;
@@ -834,7 +971,7 @@ void Game::sCollision() {
 					else {
 						Other->transform->position.y -= overlapY;
 						Other->transform->onGround = true;
-						Other->transform->coyoteFrames = 8;
+                     Other->transform->coyoteFrames = kCoyoteFrames;
 
 						if (Other->transform->velocity.y > 0.0f) {
 							Other->transform->velocity.y = (e->transform->velocity.y < 0.0f) ? e->transform->velocity.y : 0.0f;
@@ -847,16 +984,16 @@ void Game::sCollision() {
 				else {
 
 					if (dx < 0.0f) {
-						e->transform->position.x -= overlapX * 0.5f;
-						Other->transform->position.x += overlapX * 0.5f;
+                        e->transform->position.x -= overlapX * kPlayerPushFactor;
+						Other->transform->position.x += overlapX * kPlayerPushFactor;
 					}
 					else {
-						e->transform->position.x += overlapX * 0.5f;
-						Other->transform->position.x -= overlapX * 0.5f;
+                        e->transform->position.x += overlapX * kPlayerPushFactor;
+						Other->transform->position.x -= overlapX * kPlayerPushFactor;
 					}
 
-					e->transform->velocity.x *= 0.5f;
-					Other->transform->velocity.x *= 0.5f;
+                   e->transform->velocity.x *= kPlayerPushFactor;
+					Other->transform->velocity.x *= kPlayerPushFactor;
 				}
 			}
 		}
@@ -869,19 +1006,19 @@ void Game::sParticle() {
 		auto& p = e->particle;
 		auto& t = e->transform;
 
-		p->age += 1.0f;
+     p->age += kParticleAgeStep;
 
 		if (p->age >= p->lifetime) {
 			e->Destroy();
 			continue;
 		}
 
-		t->velocity.y += 0.08f;
+     t->velocity.y += kParticleGravity;
 		t->position.x += t->velocity.x;
 		t->position.y += t->velocity.y;
 
 		sf::Color c = p->color;
-		c.a = static_cast<std::uint8_t>(p->alpha() * 255);
+      c.a = static_cast<std::uint8_t>(p->alpha() * kParticleAlphaScale);
 		e->sprite->getShape().setFillColor(c);
 	}
 }
@@ -890,12 +1027,12 @@ void Game::sHealth() {
 	for (auto& e : entityManager.GetEntities("Player")) {
 		if (!e->health || !e->transform) { continue; }
 
-		if (e->transform->position.y > WINDOW_HEIGHT + 100.0f) {
+        if (e->transform->position.y > WINDOW_HEIGHT + kFallDeathOffset) {
 			e->health->lives--;
 
 			if (e->health->lives <= 0) {
 				State = GameState::GameOver;
-				PushMusic("gameover.ogg");
+              PushMusic(kGameOverMusicPath);
 			}
 			else {
 				StartRespawn(e->transform->position);
@@ -907,16 +1044,16 @@ void Game::sHealth() {
 
 void Game::RenderHud() {
 	sf::Text p1Text(font), p2Text(font);
-	p1Text.setCharacterSize(24);
-	p2Text.setCharacterSize(24);
+    p1Text.setCharacterSize(kHudTextSize);
+	p2Text.setCharacterSize(kHudTextSize);
 	p1Text.setFillColor(sf::Color::Cyan);
 	p2Text.setFillColor(sf::Color::White);
 
 	p1Text.setString("P1:");
 	p2Text.setString("P2:");
 
-	p1Text.setPosition({ 20.f, 20.f });
-	p2Text.setPosition({ 20.f, 60.f });
+ p1Text.setPosition({ kHudTextOffsetX, kHudP1OffsetY });
+	p2Text.setPosition({ kHudTextOffsetX, kHudP2OffsetY });
 
 	window.draw(p1Text);
 	window.draw(p2Text);
@@ -924,25 +1061,22 @@ void Game::RenderHud() {
 	sf::Sprite p1Heart(p1HeartTex);
 	sf::Sprite p2Heart(p2HeartTex);
 
-	p1Heart.setScale({ 0.05f, 0.05f });
-	p2Heart.setScale({ 0.05f, 0.05f });
-
-	float heartSpacing = 40.0f;
-	float startXOffset = 60.0f;
+ p1Heart.setScale({ kHeartScale, kHeartScale });
+	p2Heart.setScale({ kHeartScale, kHeartScale });
 
 	for (int i = 0; i < player1->health->lives; i++) {
-		p1Heart.setPosition({ p1Text.getPosition().x + startXOffset + (i * heartSpacing), 20.f });
+      p1Heart.setPosition({ p1Text.getPosition().x + kHeartStartOffsetX + (i * kHeartSpacing), kHudP1OffsetY });
 		window.draw(p1Heart);
 	}
 
 	for (int i = 0; i < player2->health->lives; i++) {
-		p2Heart.setPosition({ p2Text.getPosition().x + startXOffset + (i * heartSpacing), 60.f });
+      p2Heart.setPosition({ p2Text.getPosition().x + kHeartStartOffsetX + (i * kHeartSpacing), kHudP2OffsetY });
 		window.draw(p2Heart);
 	}
 }
 
 void Game::sRender() {
-	window.clear(sf::Color(30, 30, 50));
+    window.clear(kBackgroundClearColor);
 
 	window.setView(window.getDefaultView());
 
@@ -995,7 +1129,7 @@ void Game::sRender() {
 
 		wipeCircle.setFillColor(sf::Color::Transparent);
 		wipeCircle.setOutlineColor(sf::Color::Black);
-		wipeCircle.setOutlineThickness(4000.0f);
+        wipeCircle.setOutlineThickness(kWipeOutlineThickness);
 
 		window.draw(wipeCircle);
 	}
@@ -1038,7 +1172,7 @@ void Game::sMovingPlatform() {
 			float playerBottom = player->transform->position.y + player->boundingBox->halfSize.y;
 			float playerX = player->transform->position.x;
 
-			if (std::abs(playerBottom - platTop) < 3.0f && playerX > platLeft && playerX < platRight) {
+         if (std::abs(playerBottom - platTop) < kPlatformSnapThreshold && playerX > platLeft && playerX < platRight) {
 				player->transform->position += moveAmount;
 			}
 		}
@@ -1058,7 +1192,7 @@ void Game::sPatrol() {
 		Vec2  delta = target - t->position;
 		float dist = std::sqrt(delta.x * delta.x + delta.y * delta.y);
 
-		if (dist < 4.0f) {
+      if (dist < kPatrolTargetThreshold) {
 			patrol->currentTarget =
 				(patrol->currentTarget + 1) % static_cast<int>(patrol->waypoints.size());
 		}
@@ -1070,8 +1204,6 @@ void Game::sPatrol() {
 	}
 }
 void Game::sSight() {
-	static constexpr float PI = 3.14159265f;
-
 	for (auto& enemy : entityManager.GetEntities("Enemy")) {
 		if (!enemy->sight || !enemy->transform) { continue; }
 
@@ -1085,7 +1217,7 @@ void Game::sSight() {
 				: Vec2(-1.0f, 0.0f);
 		}
 
-		float cosHalf = std::cos(sight->halfAngleDeg * PI / 180.0f);
+        float cosHalf = std::cos(sight->halfAngleDeg * kPi / 180.0f);
 
 		for (auto& player : entityManager.GetEntities("Player")) {
 			if (!player->transform || !player->health) { continue; }
@@ -1102,7 +1234,7 @@ void Game::sSight() {
 					player->health->lives--;
 					if (player->health->lives <= 0) {
 						State = GameState::GameOver;
-						PushMusic("gameover.ogg");
+                  PushMusic(kGameOverMusicPath);
 					}
 					else {
 						StartRespawn(player->transform->position);
@@ -1119,7 +1251,7 @@ void Game::StartRespawn(Vec2 focusPoint) {
 
 	State = GameState::RespawnFadeOut;
 	transitionCenter = focusPoint;
-	transitionRadius = 3000.0f;
+ transitionRadius = kTransitionRadiusStart;
 
 	isLoadingNextLevel = false;
 }
@@ -1154,7 +1286,7 @@ void Game::sWinCondition() {
 			}
 		}
 
-		if (playersAtExit >= 2) {
+       if (playersAtExit >= kRequiredPlayersAtExit) {
 			StartWipe(exit->transform->position, true);
 		}
 	}
@@ -1163,7 +1295,7 @@ void Game::LoadNextLevel() {
 	if (levelQueue.isEmpty()) {
 		State = GameState::GameWon;
 
-		PushMusic("menu.ogg");
+      PushMusic(kMenuMusicPath);
 		return;
 	}
 
@@ -1187,13 +1319,13 @@ void Game::StartWipe(Vec2 focusPoint, bool advancingLevel) {
 
 	State = GameState::RespawnFadeOut;
 	transitionCenter = focusPoint;
-	transitionRadius = 3000.0f;
+ transitionRadius = kTransitionRadiusStart;
 
 	isLoadingNextLevel = advancingLevel;
 }
 
 void Game::sTransition() {
-	float fadeSpeed = 70.0f;
+    float fadeSpeed = kTransitionFadeSpeed;
 
 	if (State == GameState::RespawnFadeOut) {
 		transitionRadius -= fadeSpeed;
@@ -1211,7 +1343,7 @@ void Game::sTransition() {
 	}
 	else if (State == GameState::RespawnFadeIn) {
 		transitionRadius += fadeSpeed;
-		if (transitionRadius >= 3000.0f) {
+      if (transitionRadius >= kTransitionRadiusStart) {
 			State = GameState::Playing;
 		}
 	}
@@ -1223,12 +1355,7 @@ void Game::PushMusic(const std::string& path) {
 	musicStack.push(path);
 
 	bgMusic.stop();
-	if (bgMusic.openFromFile(path)) {
-		bgMusic.setLooping(true);
-		bgMusic.setVolume(30.f);
-		bgMusic.play();
-	}
-	else {
+   if (!PlayBackgroundTrack(bgMusic, path)) {
 		std::cerr << "Warning: Could not load music track: " << path << std::endl;
 	}
 }
@@ -1242,11 +1369,7 @@ void Game::PopMusic() {
 
 	if (!musicStack.isEmpty()) {
 		std::string previousTrack = musicStack.top();
-		if (bgMusic.openFromFile(previousTrack)) {
-			bgMusic.setLooping(true);
-			bgMusic.setVolume(30.f);
-			bgMusic.play();
-		}
+      PlayBackgroundTrack(bgMusic, previousTrack);
 	}
 }
 
@@ -1256,13 +1379,13 @@ sf::Texture& Game::getTexture(const std::string& name) {
 		return it->second;
 	}
 
-	std::string path = "Textures/" + name + ".png";
+ std::string path = std::string(kTexturesDirectory) + name + kTextureExtension;
 
 	if (!textureCache[name].loadFromFile(path)) {
 		std::cerr << "!!! ERROR: Could not find " << path << " !!!" << std::endl;
 
 		sf::Image pinkImage;
-		pinkImage.resize({ 2, 2 }, sf::Color::Magenta);
+     pinkImage.resize({ kFallbackTextureSize, kFallbackTextureSize }, sf::Color::Magenta);
 
 		bool fallbackLoaded = textureCache[name].loadFromImage(pinkImage);
 		if (!fallbackLoaded) {
@@ -1279,20 +1402,20 @@ void Game::RenderGameWon() {
 
 	sf::Text over(font), sub(font), hint(font);
 
-	over.setCharacterSize(56);
-	over.setFillColor(sf::Color(255, 215, 0));
-	over.setString("VICTORY!");
-	over.setPosition({ cx - over.getLocalBounds().size.x * 0.5f, cy - 120.f });
+  over.setCharacterSize(kGameWonTitleSize);
+	over.setFillColor(kGameWonTitleColor);
+	over.setString(kGameWonTitleText);
+	over.setPosition({ cx - over.getLocalBounds().size.x * 0.5f, cy - kGameWonTitleOffset });
 
-	sub.setCharacterSize(28);
+   sub.setCharacterSize(kGameWonSubtitleSize);
 	sub.setFillColor(sf::Color::White);
-	sub.setString("DONO BHAI GAYE BILLO DE GHAR");
+  sub.setString(kGameWonSubtitleText);
 	sub.setPosition({ cx - sub.getLocalBounds().size.x * 0.5f, cy });
 
-	hint.setCharacterSize(22);
-	hint.setFillColor(sf::Color(160, 160, 160));
-	hint.setString("Press Enter or Space to return to Main Menu");
-	hint.setPosition({ cx - hint.getLocalBounds().size.x * 0.5f, cy + 70.f });
+  hint.setCharacterSize(kGameWonHintSize);
+	hint.setFillColor(kHudHintColor);
+	hint.setString(kGameWonHintText);
+	hint.setPosition({ cx - hint.getLocalBounds().size.x * 0.5f, cy + kGameWonHintOffset });
 
 	window.draw(over);
 	window.draw(sub);
