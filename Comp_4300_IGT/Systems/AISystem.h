@@ -1,8 +1,11 @@
 #pragma once
 
+
 #include "../EntityManager.h"
 #include "../GameState.h"
 #include "../Vec2.h"
+
+class AudioManager;
 
 namespace AISystem {
 void sPatrol(EntityManager& entityManager);
@@ -13,5 +16,5 @@ void sSight(EntityManager& entityManager,
             float& transitionRadius,
             bool& m_isLoadingNextLevel,
             const char* gameOverTrack,
-            class AudioManager& audioManager);
+            ::AudioManager& audioManager);
 }

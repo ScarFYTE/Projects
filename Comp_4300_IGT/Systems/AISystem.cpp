@@ -40,7 +40,7 @@ void sSight(EntityManager& entityManager,
             float& transitionRadius,
             bool& m_isLoadingNextLevel,
             const char* gameOverTrack,
-            AudioManager& audioManager) {
+            ::AudioManager& audioManager) {
     for (auto& enemy : entityManager.GetEntities("Enemy")) {
         if (!enemy->sight || !enemy->transform) { continue; }
 
@@ -71,7 +71,7 @@ void sSight(EntityManager& entityManager,
                     player->health->lives--;
                     if (player->health->lives <= 0) {
                         m_state = GameState::GameOver;
-                        audioManager.pushMusic(gameOverTrack, GameConstants::kMusicVolume);
+						audioManager.pushMusic(gameOverTrack, GameConstants::kMusicVolume);
                     }
                     else {
                         startRespawn(m_state, transitionCenter, transitionRadius, m_isLoadingNextLevel, player->transform->position);
